@@ -325,7 +325,6 @@ function App() {
 
   return (
     <div className="chat-container">
-      <div className="chat-header">あおみつLINE</div>
       <div className="chat-messages">
         {messages.map((msg) => {
           const isMe = msg.author === userName;
