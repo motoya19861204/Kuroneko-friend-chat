@@ -1,0 +1,17 @@
+{
+  "name": "黒猫フレンドチャット",
+  "short_name": "黒猫友達",
+  "description": "友達と黒猫の神様でお話しするグループチャット",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#7494C0",
+  "theme_color": "#5B7A99",
+  "icons": [
+    {
+      "src": "/icon-square.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

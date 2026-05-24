@@ -1,0 +1,283 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #7494C0;
+  font-family: 'Noto Sans JP', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ログイン画面 */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  margin: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.login-screen h1 {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.login-screen input {
+  padding: 10px 15px;
+  font-size: 1.2rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  width: 80%;
+  text-align: center;
+}
+
+.login-screen button {
+  background-color: #06C755;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* チャット画面 */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-header {
+  background-color: #5B7A99;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* 吹き出し共通 */
+.message-row {
+  display: flex;
+  align-items: flex-start;
+  max-width: 80%;
+}
+
+.message-row.me {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message-row.other {
+  align-self: flex-start;
+}
+
+.selection-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 15px 0 5px 0;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.input-group label {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+/* アイコン選択 */
+.icon-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 10px auto 25px auto;
+  width: fit-content;
+}
+
+.icon-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px;
+  border: 4px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-option.selected {
+  border-color: #06C755;
+  background-color: transparent;
+}
+
+.icon-option img {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f9f9f9;
+}
+
+/* アバター */
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 8px;
+  min-width: 50px;
+}
+
+.avatar-frame {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: white;
+  overflow: hidden; /* ここで中の画像を切り抜く */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cat .avatar-img {
+  object-position: center 20%;
+  transform: scale(1.25); /* 1.25倍にズーム */
+}
+
+.me-avatar {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+.sender-name {
+  font-size: 0.75rem;
+  color: white;
+  margin-top: 4px;
+}
+
+/* 吹き出しの中身 */
+.bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  color: #333;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  position: relative;
+  margin-top: 15px; /* 名前の分下げる */
+}
+
+.me .bubble {
+  background-color: #8CE839;
+  border-top-right-radius: 0;
+  margin-top: 0;
+}
+
+.other .bubble {
+  background-color: white;
+  border-top-left-radius: 0;
+}
+
+/* 黒猫特別スタイル */
+.other.cat .bubble {
+  background-color: white;
+  border: 1px solid #ddd;
+  font-weight: bold;
+}
+
+.other.cat .sender-name {
+  color: #FFD700;
+  font-weight: bold;
+}
+
+/* 入力欄 */
+.input-area {
+  display: flex;
+  padding: 10px;
+  background-color: white;
+  align-items: center;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  font-size: 1rem;
+}
+
+.send-btn {
+  background-color: #06C755;
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin-left: 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.send-btn:disabled {
+  background-color: #ccc;
+}
+
+.login-avatar-frame {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 15px;
+}
+
+.login-cat-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  transform: scale(1.25);
+}
