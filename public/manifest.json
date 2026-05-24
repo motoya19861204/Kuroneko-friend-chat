@@ -1,7 +1,7 @@
 {
-  "name": "黒猫フレンドチャット",
-  "short_name": "黒猫友達",
-  "description": "友達と黒猫の神様でお話しするグループチャット",
+  "name": "あおみつLINE",
+  "short_name": "あおみつ",
+  "description": "友達と黒猫の神様でお話しするチャットアプリ",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#7494C0",

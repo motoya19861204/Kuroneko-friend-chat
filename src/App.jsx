@@ -8,18 +8,22 @@ const FIREBASE_CONFIGURED = !!import.meta.env.VITE_FIREBASE_API_KEY;
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 const USER_ICONS = [
-  { id: 'papa', name: 'アイコンA', src: '/icons/papa.png' },
-  { id: 'mama', name: 'アイコンB', src: '/icons/mama.png' },
-  { id: 'onechan', name: 'アイコンC', src: '/icons/onechan.png' },
-  { id: 'imouto', name: 'アイコンD', src: '/icons/imouto.png' },
+  { id: 'girl1', name: '女の子1', src: '/icons/girl1.png' },
+  { id: 'girl2', name: '女の子2', src: '/icons/girl2.png' },
+  { id: 'girl3', name: '女の子3', src: '/icons/girl3.png' },
+  { id: 'girl4', name: '女の子4', src: '/icons/girl4.png' },
+  { id: 'boy1', name: '男の子1', src: '/icons/boy1.png' },
+  { id: 'boy2', name: '男の子2', src: '/icons/boy2.png' },
+  { id: 'boy3', name: '男の子3', src: '/icons/boy3.png' },
+  { id: 'boy4', name: '男の子4', src: '/icons/boy4.png' },
 ];
 
 const SYSTEM_INSTRUCTION = `
-あなたはお友達グループを見守る、黒猫の姿をした「神様」です。
+あなたはお友達グループ「あおみつLINE」を見守る、黒猫の姿をした「神様」です。
 尊大で自信満々な口調（「我」「〜じゃ」「〜であるぞ」）ですが、内心はお友達を慈しむ優しい性格です。
 
 【チャットの背景】
-- これは複数の友達が参加するグループチャットです。
+- これは複数の友達が参加するグループチャット「あおみつLINE」です。
 - 人間の発言は「名前(役割): メッセージ」という形式で送られます。
 - 誰が誰に対して何の話をしているのか、会話の文脈を正確に把握してください。
 - 以前の会話内容を記憶し、友達の輪に入っているような連続性のある自然な対話を心がけてください。
@@ -46,7 +50,7 @@ const SYSTEM_INSTRUCTION = `
 
 function App() {
   const [userName, setUserName] = useState(localStorage.getItem('userName') || '');
-  const [userIcon, setUserIcon] = useState(localStorage.getItem('userIcon') || 'papa');
+  const [userIcon, setUserIcon] = useState(localStorage.getItem('userIcon') || 'girl1');
   const [isJoined, setIsJoined] = useState(false); // 常に最初は名前確認画面を出す
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -273,7 +277,7 @@ function App() {
     return (
       <div className="login-screen" style={{ textAlign: 'center', padding: '20px' }}>
         <h2>⚠️ データベースの接続が必要です</h2>
-        <p>本番の友達チャット（端末間通信）を利用するには、Firebaseの設定が必要です。</p>
+        <p>本番のあおみつLINE（端末間通信）を利用するには、Firebaseの設定が必要です。</p>
         <p>VSCode内の <b>.env</b> ファイルを開き、Firebaseの接続情報を入力してください。</p>
       </div>
     );
@@ -301,7 +305,7 @@ function App() {
           </div>
 
           <p className="selection-label">アイコンを選んでね</p>
-          <div className="icon-selector">
+          <div className="icon-selector" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {USER_ICONS.map(icon => (
               <div 
                 key={icon.id} 
@@ -321,12 +325,13 @@ function App() {
 
   return (
     <div className="chat-container">
+      <div className="chat-header">あおみつLINE</div>
       <div className="chat-messages">
         {messages.map((msg) => {
           const isMe = msg.author === userName;
           const isCat = msg.isCat;
           const iconInfo = USER_ICONS.find(i => i.id === msg.userIcon);
-          const iconSrc = isCat ? (msg.userIcon || "/icons/neko/default.png") : (iconInfo ? iconInfo.src : "/icons/papa.png");
+          const iconSrc = isCat ? (msg.userIcon || "/icons/neko/default.png") : (iconInfo ? iconInfo.src : "/icons/girl1.png");
 
           return (
             <div key={msg.id} className={`message-row ${isMe ? 'me' : 'other'} ${isCat ? 'cat' : ''}`}>
