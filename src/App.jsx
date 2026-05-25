@@ -132,6 +132,15 @@ function App() {
     }
   };
 
+  const handleLeave = () => {
+    if (window.confirm("チャットから退室してログイン画面に戻るニャ？\n（名前やアイコンを新しく選び直せるぞ）")) {
+      localStorage.removeItem('userName');
+      setUserName('');
+      setIsJoined(false);
+      setShowMenu(false);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
@@ -525,6 +534,40 @@ function App() {
               </div>
               <span style={{ fontWeight: 'bold', color: '#555' }}>新聞をつくる</span>
             </a>
+
+            <button 
+              type="button" 
+              onClick={handleLeave} 
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textDecoration: 'none',
+                color: '#333',
+                fontSize: '0.8rem',
+                gap: '6px',
+                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                padding: 0
+              }}
+            >
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '16px',
+                backgroundColor: '#ffebee',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                transition: 'transform 0.1s'
+              }}>
+                🚪
+              </div>
+              <span style={{ fontWeight: 'bold', color: '#555' }}>退室する</span>
+            </button>
           </div>
         )}
       </form>
