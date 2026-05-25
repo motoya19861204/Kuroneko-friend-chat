@@ -236,8 +236,23 @@ function AomitsuRoom({ db, userName, userIcon }) {
       {Object.keys(players).map((name) => {
         const player = players[name];
         const isMe = name === userName;
-        const iconInfo = USER_ICONS.find(i => i.id === player.userIcon);
-        const iconSrc = iconInfo ? iconInfo.src : "/icons/girl1.png";
+        
+        // 基本画像（フォールバック用）: スプライトがない場合は真正面コマ0を使用
+        const fallbackSrc = `/sprites/${player.userIcon}-down-0.png`;
+        
+        // ローカル歩行状態の取得
+        const state = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
+        let imgName = `${player.userIcon}-down-0.png`;
+        
+        if (state.isWalking) {
+          // 歩行中: 方向とコマを反映
+          imgName = `${player.userIcon}-${state.direction}-${state.frame}.png`;
+        } else {
+          // 停止中: 最後に歩いていた方向のコマ0
+          imgName = `${player.userIcon}-${state.direction}-0.png`;
+        }
+        
+        const iconSrc = `/sprites/${imgName}`;
 
         return (
           <div 
@@ -251,7 +266,13 @@ function AomitsuRoom({ db, userName, userIcon }) {
             <img 
               src={iconSrc} 
               className="avatar-node-img" 
-              alt={name} 
+              alt={name}
+              onError={(e) => {
+                // 画像ファイル（歩行コマなど）が存在しない場合は、完全正面コマ0に自動フォールバック
+                if (e.target.src !== window.location.origin + fallbackSrc) {
+                  e.target.src = fallbackSrc;
+                }
+              }}
             />
             <span className="avatar-name-tag">
               {isMe ? "あなた" : name}
