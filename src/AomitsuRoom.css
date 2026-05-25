@@ -1,0 +1,199 @@
+/* あおみつルーム（アバターひろば）スタイル */
+
+.aomitsu-room-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  background-color: #E2D3B7; /* 優しいウッドカラーのフォールバック */
+  /* あたたかみのある優しいフローリング柄のパターン */
+  background-image: 
+    linear-gradient(90deg, rgba(255,255,255,0.07) 50%, transparent 50%),
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 60px 100%, 100% 20px;
+  border-bottom: 3px solid #5B7A99;
+  overflow: hidden;
+  box-shadow: inset 0 -10px 20px rgba(0,0,0,0.05);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* お部屋のインテリア（コタツ・ラグ風の円） */
+.room-rug {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  background-color: rgba(255, 255, 255, 0.25);
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+/* 黒猫の神様 NPC */
+.neko-god-npc {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 50px;
+  height: 50px;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  cursor: pointer;
+  animation: god-float 3s ease-in-out infinite; /* 神秘的なふわふわアニメーション */
+  transition: transform 0.2s;
+}
+
+.neko-god-npc:active {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.neko-god-npc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  transform: scale(1.25);
+  border-radius: 50%;
+  border: 3px solid #FFD700; /* 神様の金ブチ */
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  background: white;
+}
+
+/* 神様の吹き出し */
+.god-bubble {
+  position: absolute;
+  left: 50%;
+  top: 15%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid #FFD700;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 10;
+  white-space: nowrap;
+  animation: bounce 0.3s ease-out;
+}
+
+.god-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: white transparent;
+  display: block;
+  width: 0;
+  z-index: 1;
+}
+
+.god-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: #FFD700 transparent;
+  display: block;
+  width: 0;
+  z-index: 0;
+}
+
+/* アバターノード */
+.avatar-node {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  z-index: 5;
+  /* 0.8秒かけてトコトコと滑らかに歩く */
+  transition: left 0.8s ease-out, top 0.8s ease-out;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* アバター画像 */
+.avatar-node-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  background-color: white;
+  object-fit: cover;
+  transition: transform 0.1s;
+}
+
+.avatar-node:active .avatar-node-img {
+  transform: scale(0.9);
+}
+
+/* ネームタグ */
+.avatar-name-tag {
+  margin-top: 4px;
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 自分のアバターを強調 */
+.avatar-node.is-me .avatar-node-img {
+  border-color: #8CE839; /* 自分はグリーンフチ */
+  box-shadow: 0 4px 12px rgba(140, 232, 57, 0.35);
+}
+
+/* 浮遊・はずみアニメーション */
+@keyframes god-float {
+  0% { transform: translate(-50%, -50%) translateY(0px); }
+  50% { transform: translate(-50%, -50%) translateY(-6px); }
+  100% { transform: translate(-50%, -50%) translateY(0px); }
+}
+
+@keyframes bounce {
+  0% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+  70% { transform: translateX(-50%) scale(1.05); }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ひろば表示切り替えタブ */
+.room-toggle-tabs {
+  display: flex;
+  background-color: #5B7A99;
+  border-bottom: 2px solid #4a6682;
+  user-select: none;
+}
+
+.room-tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 12px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.room-tab-btn.active {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-bottom: 3px solid #8CE839;
+}
