@@ -116,10 +116,13 @@ function AomitsuRoom({ db, userName, userIcon }) {
     Object.keys(players).forEach(name => {
       const player = players[name];
       const prevPlayer = prevPlayersRef.current[name];
+      if (!prevPlayer) {
+        prevPlayersRef.current[name] = player;
+        return;
+      }
 
-      if (prevPlayer) {
-        const dX = player.x - prevPlayer.x;
-        const dY = player.y - prevPlayer.y;
+      const dX = player.x - prevPlayer.x;
+      const dY = player.y - prevPlayer.y;
 
         // 有意な移動のみ検知（座標が0.5%以上動いた時）
         if (Math.abs(dX) > 0.5 || Math.abs(dY) > 0.5) {
@@ -174,7 +177,6 @@ function AomitsuRoom({ db, userName, userIcon }) {
             timeout: timeoutId
           };
         }
-      }
     });
 
     prevPlayersRef.current = players;
