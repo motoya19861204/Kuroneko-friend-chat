@@ -105,6 +105,12 @@ function NewspaperApp() {
 
   // 新聞を作成する（Gemini API 呼び出し）
   const handleGenerateNewspaper = async () => {
+    const yesterdayLimit = getYesterdayStr();
+    if (targetDate > yesterdayLimit) {
+      alert("今日以降の新聞は作れぬぞ！昨日の分までにするのじゃ。");
+      return;
+    }
+
     if (isAlreadyPublished()) {
       alert("この日のあおみつ新聞はすでに発行済みじゃ！1日につき1回しか発行できぬぞ。");
       return;
@@ -209,6 +215,12 @@ ${chatLogText}`;
 
   // 生成された新聞を画像化してチャットに自動投稿する
   const handlePublishNewspaper = async () => {
+    const yesterdayLimit = getYesterdayStr();
+    if (targetDate > yesterdayLimit) {
+      alert("今日以降の新聞は作れぬぞ！昨日の分までにするのじゃ。");
+      return;
+    }
+
     if (isAlreadyPublished()) {
       alert("この日のあおみつ新聞はすでに発行済みじゃ！1日につき1回しか発行できぬぞ。");
       return;
