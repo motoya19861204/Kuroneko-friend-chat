@@ -345,6 +345,15 @@ function App() {
 
   return (
     <div className="chat-container">
+      <div className="chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px' }}>
+        <a href="/room.html" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.2)', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold' }}>
+          🏡 ひろばへ
+        </a>
+        <span style={{ fontFamily: 'sans-serif' }}>あおみつLINE</span>
+        <a href="/newspaper.html" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.2)', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold' }}>
+          📰 新聞
+        </a>
+      </div>
       <div className="chat-messages">
         {messages.map((msg, index) => {
           const isMe = msg.author === userName;
@@ -383,7 +392,29 @@ function App() {
                 )}
                 <div className="bubble-wrapper">
                   <div className="bubble">
-                    {msg.text.split('\n').map((line, i) => <Fragment key={i}>{line}<br /></Fragment>)}
+                    {msg.text.startsWith('data:image/') ? (
+                      <img 
+                        src={msg.text} 
+                        alt="画像" 
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: '400px', 
+                          borderRadius: '8px', 
+                          marginTop: '4px',
+                          display: 'block',
+                          cursor: 'pointer' 
+                        }} 
+                        onClick={() => {
+                          // クリックで拡大表示や保存がしやすくなるように新規タブで開くなどの工夫
+                          const newTab = window.open();
+                          if (newTab) {
+                            newTab.document.write(`<img src="${msg.text}" style="max-width:100%; max-height:100vh; display:block; margin:auto;" />`);
+                          }
+                        }}
+                      />
+                    ) : (
+                      msg.text.split('\n').map((line, i) => <Fragment key={i}>{line}<br /></Fragment>)
+                    )}
                   </div>
                   <span className="message-time">{getFormattedTime(msg.id)}</span>
                 </div>

@@ -5,10 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
+    minify: false,
     rollupOptions: {
       input: {
         main: './index.html',
         room: './room.html',
+        newspaper: './newspaper.html',
       },
     },
   },

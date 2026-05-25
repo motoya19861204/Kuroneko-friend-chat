@@ -181,6 +181,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
 
     prevPlayersRef.current = players;
     if (hasChanged) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWalkingStates(newWalkingStates);
     }
   }, [players]);
