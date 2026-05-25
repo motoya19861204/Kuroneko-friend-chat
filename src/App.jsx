@@ -92,8 +92,7 @@ function App() {
     if (!FIREBASE_CONFIGURED) return;
 
     const chatRef = ref(db, 'friendChatMessages');
-    const q = query(chatRef, limitToLast(100)); // 読み込みを100件に制限
-    const unsubscribe = onValue(q, (snapshot) => {
+    const unsubscribe = onValue(chatRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const messageArray = Object.values(data);
