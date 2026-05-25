@@ -90,8 +90,25 @@ function NewspaperApp() {
 
   const filteredMessages = getFilteredMessages();
 
+  // 同じ日付の新聞がすでに発行（投稿）されているかチェックする
+  const isAlreadyPublished = () => {
+    if (!targetDate) return false;
+    const formattedDate = targetDate.replace(/-/g, '/');
+    return messages.some(m => 
+      m.isCat && 
+      m.text && 
+      m.text.includes("📰 【あおみつ新聞】を発行したぞ！") && 
+      m.text.includes(`日付: ${formattedDate}`)
+    );
+  };
+
   // 新聞を作成する（Gemini API 呼び出し）
   const handleGenerateNewspaper = async () => {
+    if (isAlreadyPublished()) {
+      alert("この日のあおみつ新聞はすでに発行済みじゃ！1日につき1回しか発行できぬぞ。");
+      return;
+    }
+
     if (filteredMessages.length === 0) {
       alert("選択された日は会話の記録がないか、黒猫の発言のみです。会話のある日付を選んでください。");
       return;
@@ -191,6 +208,11 @@ ${chatLogText}`;
 
   // 生成された新聞を画像化してチャットに自動投稿する
   const handlePublishNewspaper = async () => {
+    if (isAlreadyPublished()) {
+      alert("この日のあおみつ新聞はすでに発行済みじゃ！1日につき1回しか発行できぬぞ。");
+      return;
+    }
+
     if (!newspaperData || !paperRef.current) return;
 
     setIsLoading(true);
@@ -266,7 +288,7 @@ ${chatLogText}`;
       <header className="newspaper-header">
         <div className="header-left">
           <a href="/" className="back-chat-link">
-            <span className="arrow">←</span> LINEチャットに戻る
+            <span className="arrow">←</span> LINEへ戻る
           </a>
         </div>
         <div className="header-center">
@@ -284,16 +306,19 @@ ${chatLogText}`;
         <section className="control-panel">
           <div className="panel-card">
             <h3>📅 新聞をつくる日付を選んでね</h3>
-            <p className="panel-desc">
-              選んだ日付のLINEの会話ログから、黒猫の言葉を除外した「人間だけ」の会話をAIが分析して新聞にします。
+            <p className="panel-desc" style={{ whiteSpace: 'pre-line' }}>
+              過去の出来事を新聞にします！{"\n"}
+              ※昨日までの出来事しか作れません{"\n"}
+              ※1日につき1回しか発行できません
             </p>
             
-            <div className="input-group">
+            <div className="date-input-group">
               <input 
                 type="date" 
                 value={targetDate} 
                 onChange={(e) => setTargetDate(e.target.value)}
                 className="date-input"
+                max={getYesterdayStr()}
               />
             </div>
 
@@ -309,20 +334,9 @@ ${chatLogText}`;
                   setTargetDate(`${yyyy}-${mm}-${dd}`);
                 }}
                 className={`quick-date-btn ${targetDate === getYesterdayStr() ? 'active' : ''}`}
+                style={{ width: '100%' }}
               >
-                昨日
-              </button>
-              <button 
-                onClick={() => {
-                  const today = new Date();
-                  const yyyy = today.getFullYear();
-                  const mm = String(today.getMonth() + 1).padStart(2, '0');
-                  const dd = String(today.getDate()).padStart(2, '0');
-                  setTargetDate(`${yyyy}-${mm}-${dd}`);
-                }}
-                className="quick-date-btn"
-              >
-                今日
+                昨日を選択する
               </button>
             </div>
 
@@ -334,7 +348,11 @@ ${chatLogText}`;
               </span>
             </div>
 
-            {filteredMessages.length === 0 ? (
+            {isAlreadyPublished() ? (
+              <div className="empty-warning" style={{ backgroundColor: '#fdedec', borderColor: '#f5c6cb', color: '#721c24' }}>
+                ⚠️ この日のあおみつ新聞はすでに発行済みじゃ！新聞の発行は1日1回までであるぞ。
+              </div>
+            ) : filteredMessages.length === 0 ? (
               <div className="empty-warning">
                 ⚠️ この日はお友達同士の会話がまだないニャ。他の日付を選んでね！
               </div>

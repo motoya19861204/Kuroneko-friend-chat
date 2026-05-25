@@ -107,8 +107,17 @@
   margin-bottom: 20px;
 }
 
+.date-input-group {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+}
+
 .date-input {
   width: 100%;
+  max-width: 100%;
   padding: 14px;
   border-radius: 12px;
   border: 2px solid #7bc0a3;
