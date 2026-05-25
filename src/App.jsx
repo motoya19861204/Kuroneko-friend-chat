@@ -108,7 +108,7 @@ function App() {
           userIcon: '/icons/neko/default.png',
           isCat: true
         };
-        set(ref(db, 'friendChatMessages'), [welcome]);
+        setMessages([welcome]);
       }
     });
 
