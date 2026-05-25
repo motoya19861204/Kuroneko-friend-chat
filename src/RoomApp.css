@@ -1,0 +1,161 @@
+/* あおみつひろば専用 グローバル＆ログイン画面スタイル */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none !important; /* チャット用の600px制限を強制解除 */
+  background-color: #E2D3B7; /* フローリング調にマッチするぬくもりのある木目カラー */
+  font-family: 'Noto Sans JP', sans-serif;
+  overflow: hidden;
+}
+
+/* ログイン・アバター選択画面 */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  max-width: 480px; /* ログイン画面だけは中央に綺麗に収める */
+  margin: 0 auto;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+}
+
+/* モバイルやデスクトップでの見栄えを調整 */
+@media (min-width: 480px) {
+  .login-screen {
+    height: auto;
+    margin-top: 5vh;
+    border-radius: 20px;
+    border: 3px solid #5B7A99;
+  }
+}
+
+.login-screen h2 {
+  font-size: 1.6rem;
+  color: #333;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 25px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.input-group input {
+  padding: 12px 15px;
+  font-size: 1.2rem;
+  border: 3px solid #5B7A99;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 300px;
+  text-align: center;
+  outline: none;
+  background-color: #f9f9f9;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #28a745;
+  background-color: white;
+}
+
+.selection-label {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #555;
+  margin: 15px 0 10px 0;
+}
+
+/* アバター選択 */
+.icon-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 10px auto 30px auto;
+  width: fit-content;
+}
+
+.icon-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  border: 4px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-option.selected {
+  border-color: #28a745;
+  transform: scale(1.08);
+}
+
+.icon-option img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.login-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+  transition: all 0.2s;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+.login-avatar-frame {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #5B7A99;
+}
+
+.login-cat-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.25);
+  object-position: center 20%;
+}

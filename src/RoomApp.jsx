@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './App.css'; // あおみつLINEのログイン画面と似た可愛らしいスタイルを適用
+import './RoomApp.css'; // あおみつひろば専用の独立したスタイルを適用
 import AomitsuRoom from './AomitsuRoom';
 import { db, auth } from './firebase';
 import { signInAnonymously } from 'firebase/auth';
