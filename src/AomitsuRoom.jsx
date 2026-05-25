@@ -27,6 +27,9 @@ const GOD_QUOTES = [
 function AomitsuRoom({ db, userName, userIcon }) {
   const [players, setPlayers] = useState({});
   const [godQuote, setGodQuote] = useState("");
+  const [walkingStates, setWalkingStates] = useState({});
+  const prevPlayersRef = useRef({});
+  const walkTimersRef = useRef({});
   const quoteTimerRef = useRef(null);
   const roomRef = useRef(null);
 
@@ -74,6 +77,93 @@ function AomitsuRoom({ db, userName, userIcon }) {
       });
     };
   }, [db, userName, userIcon]);
+
+  // 1.5. プレイヤーの座標変化から歩行状態（方向・フレーム）を判定・アニメーション
+  useEffect(() => {
+    const newWalkingStates = { ...walkingStates };
+    let hasChanged = false;
+
+    Object.keys(players).forEach(name => {
+      const player = players[name];
+      const prevPlayer = prevPlayersRef.current[name];
+
+      if (prevPlayer) {
+        const dX = player.x - prevPlayer.x;
+        const dY = player.y - prevPlayer.y;
+
+        // 有意な移動のみ検知（座標が0.5%以上動いた時）
+        if (Math.abs(dX) > 0.5 || Math.abs(dY) > 0.5) {
+          let dir = 'down';
+          if (Math.abs(dX) > Math.abs(dY)) {
+            dir = dX > 0 ? 'right' : 'left';
+          } else {
+            dir = dY > 0 ? 'down' : 'up';
+          }
+
+          newWalkingStates[name] = {
+            isWalking: true,
+            direction: dir,
+            frame: 0
+          };
+          hasChanged = true;
+
+          // 既存のタイマーをクリアして上書き
+          if (walkTimersRef.current[name]) {
+            clearInterval(walkTimersRef.current[name].interval);
+            clearTimeout(walkTimersRef.current[name].timeout);
+          }
+
+          // 150msごとにコマ（0〜3）を切り替え
+          let currentFrame = 0;
+          const intervalId = setInterval(() => {
+            currentFrame = (currentFrame + 1) % 4;
+            setWalkingStates(prev => ({
+              ...prev,
+              [name]: {
+                ...prev[name],
+                frame: currentFrame
+              }
+            }));
+          }, 150);
+
+          // 移動完了（800ms後）に歩行を終了し、静止フレームに戻す
+          const timeoutId = setTimeout(() => {
+            clearInterval(intervalId);
+            setWalkingStates(prev => ({
+              ...prev,
+              [name]: {
+                isWalking: false,
+                direction: dir,
+                frame: 0
+              }
+            }));
+          }, 800);
+
+          walkTimersRef.current[name] = {
+            interval: intervalId,
+            timeout: timeoutId
+          };
+        }
+      }
+    });
+
+    prevPlayersRef.current = players;
+    if (hasChanged) {
+      setWalkingStates(newWalkingStates);
+    }
+  }, [players]);
+
+  // コンポーネント消滅時にすべてのタイマーを解除
+  useEffect(() => {
+    return () => {
+      Object.keys(walkTimersRef.current).forEach(name => {
+        if (walkTimersRef.current[name]) {
+          clearInterval(walkTimersRef.current[name].interval);
+          clearTimeout(walkTimersRef.current[name].timeout);
+        }
+      });
+    };
+  }, []);
 
   // 2. 画面タップでアバターを移動
   const handleRoomClick = (e) => {
