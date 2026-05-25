@@ -104,8 +104,8 @@ function NewspaperApp() {
     // 会話履歴をGeminiが理解しやすいテキストにまとめる
     const chatLogText = filteredMessages.map(m => `${m.author}: ${m.text}`).join('\n');
 
-    const prompt = `あなたはお友達グループ「あおみつLINE」の出来事やお約束をまとめる「あおみつ新聞」の黒猫編集長「あおみ」です。
-与えられた子供たちの1日分のチャットログを読み、以下の条件に従って「あおみつ新聞」の記事データを作成してください。
+    const prompt = `あなたはお友達グループの出来事やお約束をまとめる「しんぶん」の黒猫編集長です。
+与えられた子供たちの1日分のチャットログを読み、以下の条件に従って「しんぶん」の記事データを作成してください。
 
 【最重要指示】
 会話の中から、子供たち同士が話し合って決めた「お約束」「決定事項」「議論の結論（例: 遊ぶ時間、場所、ゲームの決まりごと、明日やること等）」を最優先で探し出し、それをトップニュース（title, article）としてまとめてください。
@@ -113,7 +113,7 @@ function NewspaperApp() {
 もし具体的にお約束が決まっていない場合は、その日みんなが「どんなことで一番盛り上がっていたか（話題や結論）」をテーマにしてください。
 
 【黒猫編集長のコラム（column）の指示】
-黒猫の神様「あおみ」の口調（「〜じゃ」「我は〜」）での、その日の出来事やお約束に対する、尊大で温かい一言メッセージを作成してください。猫らしい仕草やセリフ（「〜ニャ」など）を混ぜてください。
+黒猫の神様の口調（「〜じゃ」「我は〜」）での、その日の出来事やお約束に対する、尊大で温かい一言メッセージを作成してください。猫らしい仕草やセリフ（「〜ニャ」など）を混ぜてください。
 
 【本日のおもしろ発言ハイライト（highlights）の指示】
 チャットの中から特に面白かった発言や、ほっこりしたお友達同士のやり取りを3つ、発言者の名前付きで紹介してください（例：「〇〇ちゃんの『〇〇』発言にほっこりニャ！」など）。必ず3つの配列にしてください。
@@ -144,7 +144,7 @@ ${chatLogText}`;
                   properties: {
                     title: { type: "STRING", description: "一面の大見出し（15文字程度。その日の最も重要なお約束や結論）" },
                     article: { type: "STRING", description: "一面のニュース記事。何について話し合い、どんな約束や結論になったかの要約（子供向け）" },
-                    column: { type: "STRING", description: "黒猫編集長のコラム。黒猫あおみの尊大で温かい一言メッセージ（〜じゃ、我は〜）" },
+                    column: { type: "STRING", description: "黒猫編集長のコラム。黒猫の尊大で温かい一言メッセージ（〜じゃ、我は〜）" },
                     highlights: {
                       type: "ARRAY",
                       items: { type: "STRING" },
@@ -203,7 +203,7 @@ ${chatLogText}`;
 
       const base64Image = canvas.toDataURL('image/png');
       
-      setStatusMessage('あおみつLINEのチャットへ配達中じゃ...');
+      setStatusMessage('チャットのタイムラインへ配達中じゃ...');
 
       // Firebaseメッセージに追加
       // 1. 通知メッセージ
@@ -212,7 +212,7 @@ ${chatLogText}`;
         id: Date.now(),
         author: '黒猫',
         userIcon: '/icons/neko/happy.png',
-        text: `📰 【あおみつ新聞】を発行したぞ！\n日付: ${formattedDate}\n昨日のお約束や楽しかったおしゃべりをまとめたニャ！下の画像をタップして拡大して、カメラロールに保存できるぞ！`,
+        text: `📰 【しんぶん】を発行したぞ！\n日付: ${formattedDate}\n昨日のお約束や楽しかったおしゃべりをまとめたニャ！下の画像をタップして拡大して、カメラロールに保存できるぞ！`,
         isCat: true
       };
 
@@ -236,7 +236,7 @@ ${chatLogText}`;
       if (FIREBASE_CONFIGURED) {
         await set(ref(db, 'friendChatMessages'), trimmedHistory);
         setStatusMessage('配達完了！LINEチャットに届いたぞ！');
-        alert("あおみつLINEに新聞画像を投稿したニャ！チャット画面に戻って確認してね！");
+        alert("チャットに新聞画像を投稿したニャ！チャット画面に戻って確認してね！");
       } else {
         alert("Firebaseが接続されていないため、LINEチャットへの投稿はスキップされたニャ。");
       }
@@ -266,7 +266,7 @@ ${chatLogText}`;
           </a>
         </div>
         <div className="header-center">
-          <h1 className="main-title">📰 あおみつ新聞 発行所 🐈‍⬛</h1>
+          <h1 className="main-title">📰 しんぶん発行所 🐈‍⬛</h1>
         </div>
         <div className="header-right">
           <span className="user-badge">編集員: {userName}</span>
@@ -385,11 +385,11 @@ ${chatLogText}`;
                     <span className="masthead-meta">{getJpDateString(targetDate)} 発行</span>
                   </div>
                   <div className="masthead-center">
-                    <h1 className="masthead-title">あおみつ新聞</h1>
+                    <h1 className="masthead-title">しんぶん</h1>
                   </div>
                   <div className="masthead-right">
-                    <span className="masthead-meta">編集長: 黒猫の神様あおみ</span>
-                    <span className="masthead-meta">あおみつLINE公式</span>
+                    <span className="masthead-meta">編集長: 黒猫の神様</span>
+                    <span className="masthead-meta">公式</span>
                   </div>
                 </div>
 
@@ -411,9 +411,9 @@ ${chatLogText}`;
                   <div className="newspaper-columns-grid">
                     {/* コラム：黒猫編集長の一言 */}
                     <div className="newspaper-columnist-section">
-                      <h3 className="column-title">🐈‍⬛ 黒猫編集長コラム「あおみのつぶやき」</h3>
+                      <h3 className="column-title">🐈‍⬛ 黒猫編集長コラム「黒猫のつぶやき」</h3>
                       <div className="column-body">
-                        <img src="/icons/neko/default.png" alt="あおみ" className="column-cat-avatar" />
+                        <img src="/icons/neko/default.png" alt="黒猫" className="column-cat-avatar" />
                         <div className="column-text">
                           {newspaperData.column.split('\n').map((line, i) => (
                             <p key={i}>{line}</p>
@@ -439,7 +439,7 @@ ${chatLogText}`;
 
                 {/* 新聞フッター */}
                 <div className="newspaper-footer">
-                  <p>© あおみつLINE新聞社 - お友達同士の約束と友情を永遠に記録するニャ</p>
+                  <p>© 黒猫新聞社 - お友達同士の約束と友情を永遠に記録するニャ</p>
                 </div>
 
               </div>
@@ -450,7 +450,7 @@ ${chatLogText}`;
                 <img src="/icons/neko/default.png" alt="猫" className="bouncing-cat" />
               </div>
               <p className="empty-text">
-                日付を選んで「新聞の原稿をつくる！」ボタンを押すと、ここに手描きタッチの可愛い「あおみつ新聞」の出来上がりイメージが表示されるニャ！
+                日付を選んで「新聞の原稿をつくる！」ボタンを押すと、ここに手描きタッチの可愛い「しんぶん」の出来上がりイメージが表示されるニャ！
               </p>
             </div>
           )}
