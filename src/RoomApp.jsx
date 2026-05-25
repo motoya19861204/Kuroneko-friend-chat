@@ -16,9 +16,13 @@ const USER_ICONS = [
 ];
 
 function RoomApp() {
-  const [userName, setUserName] = useState(localStorage.getItem('roomUserName') || '');
-  const [userIcon, setUserIcon] = useState(localStorage.getItem('roomUserIcon') || 'girl1');
-  const [isJoined, setIsJoined] = useState(false);
+  const storedName = localStorage.getItem('userName') || '';
+  const storedIcon = localStorage.getItem('userIcon') || 'girl1';
+
+  const [userName, setUserName] = useState(storedName);
+  const [userIcon, setUserIcon] = useState(storedIcon);
+  // チャットに入室済み（ローカルストレージに名前がある）なら自動でひろばに直接入室する！
+  const [isJoined, setIsJoined] = useState(!!storedName);
 
   // 匿名認証の実行
   useEffect(() => {
@@ -31,8 +35,8 @@ function RoomApp() {
     e.preventDefault();
     const name = e.target.elements.name.value.trim();
     if (name) {
-      localStorage.setItem('roomUserName', name);
-      localStorage.setItem('roomUserIcon', userIcon);
+      localStorage.setItem('userName', name);
+      localStorage.setItem('userIcon', userIcon);
       setUserName(name);
       setIsJoined(true);
     }
