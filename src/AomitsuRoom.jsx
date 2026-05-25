@@ -250,6 +250,44 @@ function AomitsuRoom({ db, userName, userIcon }) {
       ref={roomRef}
       onMouseDown={handleRoomClick}
     >
+      {/* チャットへ戻るフローティングボタン（ひろばの世界観を壊さないお洒落デザイン） */}
+      <a 
+        href="/" 
+        className="room-back-btn"
+        style={{
+          position: 'absolute',
+          top: '15px',
+          left: '15px',
+          zIndex: 100,
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(4px)',
+          border: '2px solid #8e7f72',
+          borderRadius: '25px',
+          padding: '8px 16px',
+          color: '#3e322b',
+          textDecoration: 'none',
+          fontSize: '0.85rem',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          fontFamily: 'sans-serif'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.background = '#ffffff';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>←</span> LINEチャットに戻る
+      </a>
+
       {/* インテリアのラグ */}
       <div className="room-rug"></div>
 
