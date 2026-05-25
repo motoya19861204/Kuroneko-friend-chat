@@ -418,7 +418,18 @@ ${chatLogText}`;
               <input 
                 type="date" 
                 value={targetDate} 
-                onChange={(e) => setTargetDate(e.target.value)}
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  if (!selectedDate) return;
+                  
+                  const yesterdayLimit = getYesterdayStr();
+                  if (selectedDate > yesterdayLimit) {
+                    setTargetDate(yesterdayLimit);
+                  } else {
+                    setTargetDate(selectedDate);
+                  }
+                }}
+                onKeyDown={(e) => e.preventDefault()}
                 className="date-input"
                 max={getYesterdayStr()}
               />
