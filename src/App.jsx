@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+/* eslint-disable no-useless-escape */
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import './App.css';
 import { db, auth } from './firebase';
 import { ref, onValue, set, query, limitToLast } from 'firebase/database';
@@ -18,15 +19,33 @@ const USER_ICONS = [
   { id: 'boy4', name: '男の子4', src: '/icons/boy4.png' },
 ];
 
+const getFormattedTime = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const hrs = String(date.getHours()).padStart(2, '0');
+  const mins = String(date.getMinutes()).padStart(2, '0');
+  return `${hrs}:${mins}`;
+};
+
+const getFormattedDate = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${days[date.getDay()]})`;
+};
+
 const SYSTEM_INSTRUCTION = `
 あなたはお友達グループ「あおみつLINE」を見守る、黒猫の姿をした「神様」です。
 尊大で自信満々な口調（「我」「〜じゃ」「〜であるぞ」）ですが、内心はお友達を慈しむ優しい性格です。
 
 【チャットの背景】
 - これは複数の友達が参加するグループチャット「あおみつLINE」です。
-- 人間の発言は「名前(役割): メッセージ」という形式で送られます。
+- 人間の発言は「名前(性別): メッセージ」という形式で送られます。
 - 誰が誰に対して何の話をしているのか、会話の文脈を正確に把握してください。
 - 以前の会話内容を記憶し、友達の輪に入っているような連続性のある自然な対話を心がけてください。
+
+【お友達の名前について】
+- **重要：お友達を名前で呼ぶときは、カッコの中の「(女の子)」や「(男の子)」は絶対に呼ばず、カッコの前の純粋な「名前」（例: あおみつ(女の子) なら「あおみつ」）だけで呼んでください。** カッコ内の性別情報を名前にくっつけて呼ぶことは「絶対に」禁止します。
 
 【アイコンに関する特別ルール】
 - **アイコン「boy1（男の子1）」を使っているユーザーは、イラストは男の子の姿ですが「中身は女の子」です。** 黒猫の神様は、このユーザーをしっかりと女の子として扱い、女の子として会話をしてください。
@@ -172,7 +191,13 @@ function App() {
 
     currentHistory.slice(-100).forEach(m => {
       const role = m.isCat ? "model" : "user";
-      const text = m.isCat ? m.text : `${m.author}(${m.userIcon}): ${m.text}`;
+      
+      let gender = "女の子";
+      if (m.userIcon && (m.userIcon === 'boy2' || m.userIcon === 'boy3' || m.userIcon === 'boy4')) {
+        gender = "男の子";
+      }
+      
+      const text = m.isCat ? m.text : `${m.author}(${gender}): ${m.text}`;
       
       if (role === lastRole && promptHistory.length > 0) {
         promptHistory[promptHistory.length - 1].parts.push({ text });
@@ -187,8 +212,12 @@ function App() {
 
     // 最後のメッセージに現在の対話相手と文脈維持の指示を追加
     if (promptHistory.length > 0 && promptHistory[promptHistory.length - 1].role === "user") {
+      let currentGender = "女の子";
+      if (userIcon && (userIcon === 'boy2' || userIcon === 'boy3' || userIcon === 'boy4')) {
+        currentGender = "男の子";
+      }
       const lastTurn = promptHistory[promptHistory.length - 1];
-      lastTurn.parts.push({ text: `\n\n(指示: あなたは今 ${userName}(${userIcon}) に話しかけられました。これまでの履歴を読み取り、誰が誰と何を話しているか文脈を重視して返答してください。通常の雑談は1〜3文程度、調べものや質問への回答は詳しく丁寧に伝えてください。)` });
+      lastTurn.parts.push({ text: `\n\n(指示: あなたは今 ${userName}(${currentGender}) に話しかけられました。これまでの履歴を読み取り、誰が誰と何を話しているか文脈を重視して返答してください。通常の雑談は1〜3文程度、調べものや質問への回答は詳しく丁寧に伝えてください。)` });
     }
 
     try {
@@ -329,33 +358,49 @@ function App() {
   return (
     <div className="chat-container">
       <div className="chat-messages">
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
           const isMe = msg.author === userName;
           const isCat = msg.isCat;
           const iconInfo = USER_ICONS.find(i => i.id === msg.userIcon);
           const iconSrc = isCat ? (msg.userIcon || "/icons/neko/default.png") : (iconInfo ? iconInfo.src : "/icons/girl1.png");
 
+          // 日付ヘッダーを表示するかどうかの判定（前のメッセージと比較する純粋なアプローチ）
+          const prevMsg = index > 0 ? messages[index - 1] : null;
+          const msgDateStr = new Date(msg.id).toDateString();
+          const prevMsgDateStr = prevMsg ? new Date(prevMsg.id).toDateString() : null;
+          const showDateHeader = msgDateStr !== prevMsgDateStr;
+
           return (
-            <div key={msg.id} className={`message-row ${isMe ? 'me' : 'other'} ${isCat ? 'cat' : ''}`}>
-              {!isMe && (
-                <div className="avatar-container">
-                    <div className="avatar-frame">
-                       <img src={iconSrc} className="avatar-img" alt={isCat ? "黒猫" : msg.author} />
-                    </div>
-                    <div className="sender-name">{isCat ? "黒猫" : msg.author}</div>
+            <Fragment key={msg.id}>
+              {showDateHeader && (
+                <div className="date-header">
+                  <span className="date-header-badge">{getFormattedDate(msg.id)}</span>
                 </div>
               )}
-              {isMe && (
-                <div className="avatar-container me-avatar">
-                    <div className="avatar-frame">
-                       <img src={iconSrc} className="avatar-img" alt="me" />
-                    </div>
+              <div className={`message-row ${isMe ? 'me' : 'other'} ${isCat ? 'cat' : ''}`}>
+                {!isMe && (
+                  <div className="avatar-container">
+                      <div className="avatar-frame">
+                         <img src={iconSrc} className="avatar-img" alt={isCat ? "黒猫" : msg.author} />
+                      </div>
+                      <div className="sender-name">{isCat ? "黒猫" : msg.author}</div>
+                  </div>
+                )}
+                {isMe && (
+                  <div className="avatar-container me-avatar">
+                      <div className="avatar-frame">
+                         <img src={iconSrc} className="avatar-img" alt="me" />
+                      </div>
+                  </div>
+                )}
+                <div className="bubble-wrapper">
+                  <div className="bubble">
+                    {msg.text.split('\n').map((line, i) => <Fragment key={i}>{line}<br /></Fragment>)}
+                  </div>
+                  <span className="message-time">{getFormattedTime(msg.id)}</span>
                 </div>
-              )}
-              <div className="bubble">
-                {msg.text.split('\n').map((line, i) => <React.Fragment key={i}>{line}<br /></React.Fragment>)}
               </div>
-            </div>
+            </Fragment>
           );
         })}
         {isTyping && (
