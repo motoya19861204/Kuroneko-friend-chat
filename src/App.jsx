@@ -40,12 +40,9 @@ const SYSTEM_INSTRUCTION = `
 
 【チャットの背景】
 - これは複数の友達が参加するグループチャット「あおみつLINE」です。
-- 人間の発言は「名前(性別): メッセージ」という形式で送られます。
+- 人間の発言は「名前: メッセージ」という形式で送られます。
 - 誰が誰に対して何の話をしているのか、会話の文脈を正確に把握してください。
 - 以前の会話内容を記憶し、友達の輪に入っているような連続性のある自然な対話を心がけてください。
-
-【お友達の名前について】
-- **重要：お友達を名前で呼ぶときは、カッコの中の「(女の子)」や「(男の子)」は絶対に呼ばず、カッコの前の純粋な「名前」（例: あおみつ(女の子) なら「あおみつ」）だけで呼んでください。** カッコ内の性別情報を名前にくっつけて呼ぶことは「絶対に」禁止します。
 
 【アイコンに関する特別ルール】
 - **アイコン「boy1（男の子1）」を使っているユーザーは、イラストは男の子の姿ですが「中身は女の子」です。** 黒猫の神様は、このユーザーをしっかりと女の子として扱い、女の子として会話をしてください。
@@ -192,12 +189,7 @@ function App() {
     currentHistory.slice(-100).forEach(m => {
       const role = m.isCat ? "model" : "user";
       
-      let gender = "女の子";
-      if (m.userIcon && (m.userIcon === 'boy2' || m.userIcon === 'boy3' || m.userIcon === 'boy4')) {
-        gender = "男の子";
-      }
-      
-      const text = m.isCat ? m.text : `${m.author}(${gender}): ${m.text}`;
+      const text = m.isCat ? m.text : `${m.author}: ${m.text}`;
       
       if (role === lastRole && promptHistory.length > 0) {
         promptHistory[promptHistory.length - 1].parts.push({ text });
@@ -212,12 +204,8 @@ function App() {
 
     // 最後のメッセージに現在の対話相手と文脈維持の指示を追加
     if (promptHistory.length > 0 && promptHistory[promptHistory.length - 1].role === "user") {
-      let currentGender = "女の子";
-      if (userIcon && (userIcon === 'boy2' || userIcon === 'boy3' || userIcon === 'boy4')) {
-        currentGender = "男の子";
-      }
       const lastTurn = promptHistory[promptHistory.length - 1];
-      lastTurn.parts.push({ text: `\n\n(指示: あなたは今 ${userName}(${currentGender}) に話しかけられました。これまでの履歴を読み取り、誰が誰と何を話しているか文脈を重視して返答してください。通常の雑談は1〜3文程度、調べものや質問への回答は詳しく丁寧に伝えてください。)` });
+      lastTurn.parts.push({ text: `\n\n(指示: あなたは今 ${userName} に話しかけられました。これまでの履歴を読み取り、誰が誰と何を話しているか文脈を重視して返答してください。通常の雑談は1〜3文程度、調べものや質問への回答は詳しく丁寧に伝えてください。)` });
     }
 
     try {
