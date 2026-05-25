@@ -74,6 +74,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef(null);
 
   // 匿名認証の実行
@@ -345,15 +346,6 @@ function App() {
 
   return (
     <div className="chat-container">
-      <div className="chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px' }}>
-        <a href="/room.html" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.2)', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold' }}>
-          🏡 ひろばへ
-        </a>
-        <span style={{ fontFamily: 'sans-serif' }}>あおみつLINE</span>
-        <a href="/newspaper.html" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.2)', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold' }}>
-          📰 新聞
-        </a>
-      </div>
       <div className="chat-messages">
         {messages.map((msg, index) => {
           const isMe = msg.author === userName;
@@ -436,17 +428,118 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="input-area" onSubmit={handleSendMessage}>
-        <input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="メッセージを入力…"
-        />
-        <button type="submit" className="send-btn" disabled={!inputValue.trim()}>↑</button>
+      <form className="input-area" onSubmit={handleSendMessage} style={{ flexDirection: 'column', padding: '10px' }}>
+        <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            className="menu-toggle-btn"
+            onClick={() => setShowMenu(!showMenu)}
+            style={{
+              background: '#f0f0f0',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              marginRight: '10px',
+              fontSize: '1.4rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#555',
+              transition: 'transform 0.2s',
+              transform: showMenu ? 'rotate(45deg)' : 'none',
+              outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+          >
+            ＋
+          </button>
+          <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="メッセージを入力…"
+            style={{ flex: 1 }}
+          />
+          <button type="submit" className="send-btn" disabled={!inputValue.trim()}>↑</button>
+        </div>
+
+        {/* LINE風スライドメニュー */}
+        {showMenu && (
+          <div className="line-plus-menu" style={{
+            display: 'flex',
+            width: '100%',
+            gap: '30px',
+            padding: '15px 10px 5px 10px',
+            boxSizing: 'border-box',
+            borderTop: '1px solid #eee',
+            marginTop: '10px',
+            animation: 'fadeInMenu 0.2s ease',
+            justifyContent: 'flex-start'
+          }}>
+            <a href="/room.html" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: '#333',
+              fontSize: '0.8rem',
+              gap: '6px',
+              cursor: 'pointer'
+            }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '16px',
+                backgroundColor: '#e8f5e9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                transition: 'transform 0.1s'
+              }}>
+                🏡
+              </div>
+              <span style={{ fontWeight: 'bold', color: '#555' }}>ひろばへ行く</span>
+            </a>
+
+            <a href="/newspaper.html" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: '#333',
+              fontSize: '0.8rem',
+              gap: '6px',
+              cursor: 'pointer'
+            }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '16px',
+                backgroundColor: '#fff8e1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                transition: 'transform 0.1s'
+              }}>
+                📰
+              </div>
+              <span style={{ fontWeight: 'bold', color: '#555' }}>新聞をつくる</span>
+            </a>
+          </div>
+        )}
       </form>
       <style>{`
         .send-btn:disabled {
           background-color: #ccc;
+        }
+        @keyframes fadeInMenu {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
