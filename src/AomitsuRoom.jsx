@@ -274,7 +274,11 @@ function AomitsuRoom({ db, userName, userIcon }) {
           boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
           cursor: 'pointer',
           transition: 'all 0.2s',
-          fontFamily: 'sans-serif'
+          fontFamily: 'sans-serif',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'scale(1.05)';

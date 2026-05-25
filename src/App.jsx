@@ -70,7 +70,7 @@ const SYSTEM_INSTRUCTION = `
 function App() {
   const [userName, setUserName] = useState(localStorage.getItem('userName') || '');
   const [userIcon, setUserIcon] = useState(localStorage.getItem('userIcon') || 'girl1');
-  const [isJoined, setIsJoined] = useState(false); // 常に最初は名前確認画面を出す
+  const [isJoined, setIsJoined] = useState(!!localStorage.getItem('userName'));
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
