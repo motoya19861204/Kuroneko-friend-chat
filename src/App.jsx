@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import './App.css';
 import { db, auth } from './firebase';
-import { ref, onValue, set, query, limitToLast } from 'firebase/database';
+import { ref, onValue, set, query, limitToLast, get } from 'firebase/database';
 import { signInAnonymously } from 'firebase/auth';
 
 const FIREBASE_CONFIGURED = !!import.meta.env.VITE_FIREBASE_API_KEY;
@@ -92,7 +92,8 @@ function App() {
     if (!FIREBASE_CONFIGURED) return;
 
     const chatRef = ref(db, 'friendChatMessages');
-    const unsubscribe = onValue(chatRef, (snapshot) => {
+    const q = query(chatRef, limitToLast(100)); // 読み込みを100件に制限に戻す
+    const unsubscribe = onValue(q, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const messageArray = Object.values(data);
@@ -144,6 +145,22 @@ function App() {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
+    const chatRef = ref(db, 'friendChatMessages');
+    let currentAllMessages = [];
+    if (FIREBASE_CONFIGURED) {
+      try {
+        const snapshot = await get(chatRef);
+        if (snapshot.exists()) {
+          currentAllMessages = Object.values(snapshot.val());
+        }
+      } catch (error) {
+        console.error("Failed to fetch current messages for send:", error);
+        currentAllMessages = [...messages];
+      }
+    } else {
+      currentAllMessages = [...messages];
+    }
+
     const newMsg = {
       id: Date.now(),
       author: userName,
@@ -152,13 +169,13 @@ function App() {
       isCat: false
     };
 
-    let newHistory = [...messages, newMsg];
+    let newHistory = [...currentAllMessages, newMsg];
     if (newHistory.length > 1000) {
       newHistory = newHistory.slice(-1000); // 保存を1000件に制限
     }
 
     if (FIREBASE_CONFIGURED) {
-      set(ref(db, 'friendChatMessages'), newHistory);
+      set(chatRef, newHistory);
     } else {
       setMessages(newHistory); // ローカルフォールバック
     }
@@ -282,7 +299,23 @@ function App() {
     }
   };
 
-  const addCatMessage = (text, history, iconPath = '/icons/neko/default.png', rawText = '') => {
+  const addCatMessage = async (text, history, iconPath = '/icons/neko/default.png', rawText = '') => {
+    const chatRef = ref(db, 'friendChatMessages');
+    let currentAllMessages = [];
+    if (FIREBASE_CONFIGURED) {
+      try {
+        const snapshot = await get(chatRef);
+        if (snapshot.exists()) {
+          currentAllMessages = Object.values(snapshot.val());
+        }
+      } catch (error) {
+        console.error("Failed to fetch current messages for cat:", error);
+        currentAllMessages = [...history];
+      }
+    } else {
+      currentAllMessages = [...history];
+    }
+
     const catMsg = {
       id: Date.now(),
       author: '黒猫',
@@ -291,13 +324,13 @@ function App() {
       isCat: true,
       rawText: rawText
     };
-    let newHistory = [...history, catMsg];
+    let newHistory = [...currentAllMessages, catMsg];
     if (newHistory.length > 1000) {
       newHistory = newHistory.slice(-1000);
     }
 
     if (FIREBASE_CONFIGURED) {
-      set(ref(db, 'friendChatMessages'), newHistory);
+      set(chatRef, newHistory);
     } else {
       setMessages(newHistory);
     }
