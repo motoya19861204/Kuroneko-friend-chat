@@ -122,7 +122,7 @@ function NewspaperApp() {
     }
 
     setIsLoading(true);
-    setStatusMessage('黒猫編集長が過去ログを分析中じゃ...');
+    setStatusMessage('我の神の目で過去ログを分析中じゃ。待つがよい！');
     setNewspaperData(null);
 
     // 会話履歴をGeminiが理解しやすいテキストにまとめる
@@ -133,7 +133,7 @@ function NewspaperApp() {
 
 【文体とトーンに関する最重要指示】
 - 「黒猫編集長のコラム（column）」以外のすべての文章（一面の大見出し title, 一面のニュース記事 article, 本日のおもしろ発言ハイライト highlights）は、普通の人間（親切な新聞記者）が書いたような、客観的で丁寧な新聞らしい文体（「〜です」「〜ます」調）で作成してください。
-- 黒猫の口調（「〜じゃ」「我は〜」「〜ニャ」など）は、「黒猫編集長のコラム（column）」以外では絶対に使用しないでください。
+- 黒猫の口調（「〜じゃ」「我は〜」などの尊大な神様口調）は、「黒猫編集長のコラム（column）」以外では絶対に使用しないでください。
 - すべての文章は、読むのが小学生（低学年〜中学年）であることを考慮し、小学生がしっかりと理解できるやさしい言葉使い、ひらがなを多めにしたやさしい漢字で、分かりやすく説明してください。
 
 【最重要指示（お約束の優先要約）】
@@ -141,7 +141,9 @@ function NewspaperApp() {
 もし具体的にお約束が決まっていない場合は、その日みんなが「どんなことで一番盛り上がっていたか（話題や結論）」をテーマにしてください。
 
 【黒猫編集長のコラム（column）の指示】
-ここだけは例外的に、黒猫の神様のキャラクターになりきってください。黒猫の神様の口調（「〜じゃ」「我は〜」）で、その日の出来事やお約束に対する、尊大で温かい一言メッセージを作成してください。猫らしい仕草やセリフ（「〜ニャ」など）を混ぜてください。
+ここだけは例外的に、黒猫の神様のキャラクターになりきってください。
+黒猫の正体は、威厳に満ちた「黒猫の神様」です。語尾に「〜ニャ」を付ける安易な猫キャラの言葉遣いは絶対に避け、「我」「〜じゃ」「〜であるぞ」という尊大で重厚な神様口調を基本としてください。
+猫らしさを表現する場合は、語尾にするのではなく、感情が揺れ動いたり強がりが崩れて思わず最後に「……ニャ。」とぽつりと言葉が漏れてしまう例外的なしぐさ（演出）としてのみ使用してください。
 
 【本日のおもしろ発言ハイライト（highlights）の指示】
 チャットの中から特に面白かった発言や、ほっこりしたお友達同士のやり取りを3つ、親切な記者の視点から紹介してください。必ず3つの配列にしてください。猫の口調は使用せず、丁寧な言葉でまとめてください。（例：「〇〇くんの『〇〇』という発言がとっても面白かったですね！」など）
@@ -199,14 +201,14 @@ ${chatLogText}`;
 
       if (apiSuccess && responseData) {
         setNewspaperData(responseData);
-        setStatusMessage('新聞の原稿ができたニャ！');
+        setStatusMessage('新聞の原稿ができたぞ！');
       } else {
         throw new Error("AIからの応答を取得できませんでした。");
       }
 
     } catch (error) {
       console.error(error);
-      alert("新聞の作成に失敗したニャ。もう一度試すか、APIキーの設定を確認してほしいニャ。");
+      alert("むむ……新聞の作成に失敗してしまったぞ。もう一度試すか、APIキーの設定を確認してほしい。……ニャ。");
       setStatusMessage('');
     } finally {
       setIsLoading(false);
@@ -229,7 +231,7 @@ ${chatLogText}`;
     if (!newspaperData || !paperRef.current) return;
 
     setIsLoading(true);
-    setStatusMessage('新聞をカメラでパシャリと撮影して画像にするニャ...');
+    setStatusMessage('新聞をカメラでパシャリと撮影して画像にするぞ。刮目せい！');
 
     try {
       // 撮影時の縮小ボケを防ぐため、一時的にズームを1.0に戻して高解像度でキャプチャする
@@ -252,7 +254,7 @@ ${chatLogText}`;
 
       const base64Image = canvas.toDataURL('image/png');
       
-      setStatusMessage('あおみつLINEのチャットへ配達中じゃ...');
+      setStatusMessage('チャットへ配達中じゃ。楽しみにしておれ！');
 
       // Firebaseメッセージに追加
       // 1. 通知メッセージ
@@ -261,7 +263,7 @@ ${chatLogText}`;
         id: Date.now(),
         author: '黒猫',
         userIcon: '/icons/neko/happy.png',
-        text: `📰 【あおみつ新聞】を発行したぞ！\n日付: ${formattedDate}\n昨日のお約束や楽しかったおしゃべりをまとめたニャ！下の画像をタップして拡大して、カメラロールに保存できるぞ！`,
+        text: `📰 【あおみつ新聞】を発行したぞ！\n日付: ${formattedDate}\n昨日のお約束や楽しかったおしゃべりをまとめたのじゃ！下の画像をタップして拡大し、カメラロールに保存するがよい！`,
         isCat: true
       };
 
@@ -285,14 +287,14 @@ ${chatLogText}`;
       if (FIREBASE_CONFIGURED) {
         await set(ref(db, 'friendChatMessages'), trimmedHistory);
         setStatusMessage('配達完了！LINEチャットに届いたぞ！');
-        alert("あおみつLINEに新聞画像を投稿したニャ！チャット画面に戻って確認してね！");
+        alert("チャットに新聞画像を投稿したぞ！戻って確認するがよい！");
       } else {
-        alert("Firebaseが接続されていないため、LINEチャットへの投稿はスキップされたニャ。");
+        alert("Firebaseが接続されていないため、LINEチャットへの投稿はスキップされたぞ。……ニャ。");
       }
 
     } catch (error) {
       console.error(error);
-      alert("新聞の配達に失敗してしまったニャ。");
+      alert("むむ……新聞の配達に失敗してしまったぞ。……ニャ。");
     } finally {
       setIsLoading(false);
     }
@@ -378,7 +380,7 @@ ${chatLogText}`;
 
         {/* 新聞フッター */}
         <div className="newspaper-footer">
-          <p>© あおみつLINE新聞社 - お友達同士の約束と友情を永遠に記録するニャ</p>
+          <p>© あおみつLINE新聞社 - お友達同士の約束と友情を永遠に記録してやるぞ</p>
         </div>
       </div>
     );
@@ -407,11 +409,11 @@ ${chatLogText}`;
         {/* 左サイド：コントロールパネル */}
         <section className="control-panel">
           <div className="panel-card">
-            <h3>📅 新聞をつくる日付を選んでね</h3>
+            <h3>📅 新聞にする日付を選ぶがよい</h3>
             <p className="panel-desc" style={{ whiteSpace: 'pre-line' }}>
-              過去の出来事を新聞にします！{"\n"}
-              ※昨日までの出来事しか作れません{"\n"}
-              ※1日につき1回しか発行できません
+              昨日までの人間どもの出来事を、我の英知で新聞にまとめてやるぞ！{"\n"}
+              ※昨日までの出来事しか作れぬからな{"\n"}
+              ※新聞の発行は1日につき1回までじゃぞ
             </p>
             
             <div className="date-input-group">
@@ -467,7 +469,7 @@ ${chatLogText}`;
               </div>
             ) : filteredMessages.length === 0 ? (
               <div className="empty-warning">
-                ⚠️ この日はお友達同士の会話がまだないニャ。他の日付を選んでね！
+                ⚠️ この日はお友達同士の会話がまだ記録されておらぬぞ！他の日付を選ぶのじゃ。
               </div>
             ) : (
               <button 
@@ -475,7 +477,7 @@ ${chatLogText}`;
                 disabled={isLoading}
                 className="action-btn generate-btn"
               >
-                {isLoading ? '処理中ニャ...' : '📰 新聞の原稿をつくる！'}
+                {isLoading ? '執筆中じゃ...' : '📰 新聞の原稿をつくってやる！'}
               </button>
             )}
 
@@ -489,7 +491,7 @@ ${chatLogText}`;
             {/* 発行（投稿）ボタン：原稿があるときだけ表示 */}
             {newspaperData && (
               <div className="publish-box">
-                <div className="arrow-down">↓↓ 原稿ができたニャ！ ↓↓</div>
+                <div className="arrow-down">↓↓ 原稿ができたぞ！ ↓↓</div>
                 <button 
                   onClick={handlePublishNewspaper} 
                   disabled={isLoading}
@@ -498,7 +500,7 @@ ${chatLogText}`;
                   🚀 あおみつLINEに新聞画像を投稿する！
                 </button>
                 <p className="publish-hint">
-                  ※ボタンを押すと、右の新聞が1枚の画像（PNG）になって、あおみつLINEのチャット欄に「黒猫からの投稿」として自動で届くニャ！
+                  ※ボタンを押すと、右の新聞が1枚の画像（PNG）となって、あおみつLINEのチャット欄に「我からの投稿」として自動で届くのじゃ！
                 </p>
               </div>
             )}
@@ -529,7 +531,7 @@ ${chatLogText}`;
                 <img src="/icons/neko/default.png" alt="猫" className="bouncing-cat" />
               </div>
               <p className="empty-text">
-                日付を選んで「新聞の原稿をつくる！」ボタンを押すと、ここに手描きタッチの可愛い「あおみつ新聞」の出来上がりイメージが表示されるニャ！
+                日付を選んで「新聞の原稿をつくる！」を押してみよ。ここに我の作りだした美しい「あおみつ新聞」の出来上がりイメージが姿を現すぞ！
               </p>
             </div>
           )}
