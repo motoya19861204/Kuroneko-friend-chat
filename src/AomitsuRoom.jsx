@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, onValue, set, remove } from 'firebase/database';
+import { ref, onValue, set, remove, onDisconnect } from 'firebase/database';
 import './AomitsuRoom.css';
 
 // ユーザーアバターの定義（App.jsxと統一）
@@ -33,20 +33,38 @@ function AomitsuRoom({ db, userName, userIcon }) {
   const quoteTimerRef = useRef(null);
   const roomRef = useRef(null);
 
-  // 1. 部屋の参加者一覧をFirebaseとリアルタイム同期
+  // 1. 部屋の参加者一覧をFirebaseとリアルタイム同期 ＆ 自動退室の制御
   useEffect(() => {
     const playersRef = ref(db, 'roomPlayers');
+    const myPlayerRef = ref(db, `roomPlayers/${userName}`);
     
-    // 初回入室時に自分の初期座標（ランダム）を設定
-    const initialX = 20 + Math.random() * 60; // 20%〜80%の間
-    const initialY = 30 + Math.random() * 50; // 30%〜80%の間
-    
-    set(ref(db, `roomPlayers/${userName}`), {
-      userIcon: userIcon,
-      x: initialX,
-      y: initialY,
-      lastActive: Date.now()
-    });
+    // 入室処理
+    const enterRoom = () => {
+      const initialX = 20 + Math.random() * 60; // 20%〜80%の間
+      const initialY = 30 + Math.random() * 50; // 30%〜80%の間
+      
+      set(myPlayerRef, {
+        userIcon: userIcon,
+        x: initialX,
+        y: initialY,
+        lastActive: Date.now()
+      });
+      
+      // 接続切断時に自動で自分をFirebaseから削除する設定
+      onDisconnect(myPlayerRef).remove().catch(err => {
+        console.error("onDisconnect registration error:", err);
+      });
+    };
+
+    // 退室処理
+    const exitRoom = () => {
+      remove(myPlayerRef).catch(err => {
+        console.error("Firebase exit error:", err);
+      });
+    };
+
+    // 初期入室
+    enterRoom();
 
     // プレイヤーの動きを同期
     const unsubscribe = onValue(playersRef, (snapshot) => {
@@ -69,12 +87,24 @@ function AomitsuRoom({ db, userName, userIcon }) {
       }
     });
 
-    // 退室（アンマウント）時にFirebaseから自分のデータを削除
+    // 案A: Page Visibility API による画面の表示・非表示の連携
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // 画面が隠れたら（バックグラウンドに回ったら）即座に自動退室
+        exitRoom();
+      } else if (document.visibilityState === 'visible') {
+        // 画面が再び見えたら（復帰したら）自動で初期位置に再入室
+        enterRoom();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // クリーンアップ（アンマウント時）
     return () => {
       unsubscribe();
-      remove(ref(db, `roomPlayers/${userName}`)).catch(err => {
-        console.error("Firebase exit error:", err);
-      });
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      exitRoom();
     };
   }, [db, userName, userIcon]);
 
