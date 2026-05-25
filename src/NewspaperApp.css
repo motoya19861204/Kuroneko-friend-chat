@@ -354,11 +354,16 @@
    🎨 新聞紙面（スクショされる本体のスタイル）
 -------------------------------------------------- */
 .newspaper-wrapper {
-  overflow-x: auto;
+  overflow: hidden; /* スクロールバーを完全に消してはみ出しを防ぐ */
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(44, 62, 80, 0.1);
   background-color: #ffffff;
-  padding: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .newspaper-paper {
@@ -370,6 +375,52 @@
   display: flex;
   flex-direction: column;
   color: #3e322b; /* 黒すぎないアンティーク茶黒 */
+  transform-origin: top center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.preview-paper:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* --- レスポンシブなプレビュー縮小倍率（zoom）設定 --- */
+/* PC大画面 */
+@media (min-width: 1025px) {
+  .preview-paper {
+    zoom: 0.9;
+  }
+}
+
+/* タブレット画面 */
+@media (max-width: 1024px) {
+  .preview-paper {
+    zoom: 0.7;
+  }
+}
+
+/* スマホ画面 */
+@media (max-width: 600px) {
+  .preview-paper {
+    zoom: 0.43;
+    border-width: 8px; /* 枠線を少し細くして見栄えを調整 */
+    padding: 16px;
+  }
+}
+
+/* モーダル表示時の新聞スタイル */
+.zoomed-paper {
+  zoom: 1.0;
+  max-width: 90vw;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .zoomed-paper {
+    zoom: 0.85; /* スマホやタブレットのモーダル内では少しだけ縮小して収まりを良くする */
+    border-width: 8px;
+    padding: 16px;
+  }
 }
 
 /* 新聞看板（マストヘッド） */

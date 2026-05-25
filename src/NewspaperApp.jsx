@@ -39,6 +39,7 @@ function NewspaperApp() {
   
   // 生成された新聞データ
   const [newspaperData, setNewspaperData] = useState(null);
+  const [isPreviewZoomed, setIsPreviewZoomed] = useState(false);
   
   // HTML要素を画像化するためのRef
   const paperRef = useRef(null);
@@ -219,6 +220,13 @@ ${chatLogText}`;
     setStatusMessage('新聞をカメラでパシャリと撮影して画像にするニャ...');
 
     try {
+      // 撮影時の縮小ボケを防ぐため、一時的にズームを1.0に戻して高解像度でキャプチャする
+      const originalZoom = paperRef.current.style.zoom;
+      paperRef.current.style.zoom = '1.0';
+      
+      // ブラウザのレンダリング更新を一瞬待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       // html2canvasで画像化。拡大率を上げて綺麗にする。
       const canvas = await html2canvas(paperRef.current, {
         scale: 2.0, // 解像度アップ
@@ -226,6 +234,9 @@ ${chatLogText}`;
         backgroundColor: '#fbf8f3', // 新聞の背景色
         logging: false,
       });
+
+      // キャプチャ完了後に元の縮小状態に戻す
+      paperRef.current.style.zoom = originalZoom;
 
       const base64Image = canvas.toDataURL('image/png');
       
@@ -280,6 +291,85 @@ ${chatLogText}`;
     if (!dateStr) return "";
     const parts = dateStr.split('-');
     return `${parts[0]}年${parseInt(parts[1], 10)}月${parseInt(parts[2], 10)}日`;
+  };
+
+  // 新聞本体のレンダリング（プレビューと拡大モーダルで共通化）
+  const renderNewspaperPaper = (isZoomed = false) => {
+    if (!newspaperData) return null;
+    
+    return (
+      <div 
+        className={`newspaper-paper ${isZoomed ? 'zoomed-paper' : 'preview-paper'}`} 
+        id={isZoomed ? "newspaper-paper-zoomed" : "newspaper-paper"} 
+        ref={isZoomed ? null : paperRef}
+        onClick={isZoomed ? undefined : () => setIsPreviewZoomed(true)}
+        style={{
+          cursor: isZoomed ? 'default' : 'zoom-in'
+        }}
+      >
+        {/* 新聞の看板（ヘッダー） */}
+        <div className="newspaper-masthead">
+          <div className="masthead-left">
+            <span className="masthead-meta">第{messages.length}号</span>
+            <span className="masthead-meta">{getJpDateString(targetDate)} 発行</span>
+          </div>
+          <div className="masthead-center">
+            <h1 className="masthead-title">あおみつ新聞</h1>
+          </div>
+          <div className="masthead-right">
+            <span className="masthead-meta">編集長: 黒猫の神様</span>
+            <span className="masthead-meta">あおみつLINE公式</span>
+          </div>
+        </div>
+
+        <div className="newspaper-body">
+          {/* 主要ニュース：お約束と結論 */}
+          <div className="newspaper-main-story">
+            <h2 className="story-title">
+              <span className="story-badge">お約束・結論</span> 
+              {newspaperData.title}
+            </h2>
+            <div className="story-content">
+              {newspaperData.article.split('\n').map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+            </div>
+          </div>
+
+          <div className="newspaper-columns-grid">
+            {/* コラム：黒猫編集長の一言 */}
+            <div className="newspaper-columnist-section">
+              <h3 className="column-title">🐈‍⬛ 黒猫編集長コラム「黒猫のつぶやき」</h3>
+              <div className="column-body">
+                <img src="/icons/neko/default.png" alt="黒猫" className="column-cat-avatar" />
+                <div className="column-text">
+                  {newspaperData.column.split('\n').map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 面白ハイライト */}
+            <div className="newspaper-highlights-section">
+              <h3 className="column-title">✨ 本日のおもしろ発言ハイライト</h3>
+              <ul className="highlight-list">
+                {newspaperData.highlights.map((item, i) => (
+                  <li key={i} className="highlight-item">
+                    <span className="highlight-marker">🐾</span> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* 新聞フッター */}
+        <div className="newspaper-footer">
+          <p>© あおみつLINE新聞社 - お友達同士の約束と友情を永遠に記録するニャ</p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -398,73 +488,17 @@ ${chatLogText}`;
           
           {newspaperData ? (
             <div className="newspaper-wrapper">
-              <div className="newspaper-paper" id="newspaper-paper" ref={paperRef}>
-                
-                {/* 新聞の看板（ヘッダー） */}
-                <div className="newspaper-masthead">
-                  <div className="masthead-left">
-                    <span className="masthead-meta">第{messages.length}号</span>
-                    <span className="masthead-meta">{getJpDateString(targetDate)} 発行</span>
-                  </div>
-                  <div className="masthead-center">
-                    <h1 className="masthead-title">あおみつ新聞</h1>
-                  </div>
-                  <div className="masthead-right">
-                    <span className="masthead-meta">編集長: 黒猫の神様</span>
-                    <span className="masthead-meta">あおみつLINE公式</span>
-                  </div>
-                </div>
-
-                <div className="newspaper-body">
-                  
-                  {/* 主要ニュース：お約束と結論 */}
-                  <div className="newspaper-main-story">
-                    <h2 className="story-title">
-                      <span className="story-badge">お約束・結論</span> 
-                      {newspaperData.title}
-                    </h2>
-                    <div className="story-content">
-                      {newspaperData.article.split('\n').map((line, i) => (
-                        <p key={i}>{line}</p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="newspaper-columns-grid">
-                    {/* コラム：黒猫編集長の一言 */}
-                    <div className="newspaper-columnist-section">
-                      <h3 className="column-title">🐈‍⬛ 黒猫編集長コラム「黒猫のつぶやき」</h3>
-                      <div className="column-body">
-                        <img src="/icons/neko/default.png" alt="黒猫" className="column-cat-avatar" />
-                        <div className="column-text">
-                          {newspaperData.column.split('\n').map((line, i) => (
-                            <p key={i}>{line}</p>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 面白ハイライト */}
-                    <div className="newspaper-highlights-section">
-                      <h3 className="column-title">✨ 本日のおもしろ発言ハイライト</h3>
-                      <ul className="highlight-list">
-                        {newspaperData.highlights.map((item, i) => (
-                          <li key={i} className="highlight-item">
-                            <span className="highlight-marker">🐾</span> {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* 新聞フッター */}
-                <div className="newspaper-footer">
-                  <p>© あおみつLINE新聞社 - お友達同士の約束と友情を永遠に記録するニャ</p>
-                </div>
-
+              <div className="zoom-hint" style={{
+                textAlign: 'center',
+                fontSize: '0.8rem',
+                color: '#7f8c8d',
+                marginBottom: '8px',
+                fontWeight: 'bold',
+                fontFamily: 'sans-serif'
+              }}>
+                🔍 新聞をタップすると大きくして読めるよ！
               </div>
+              {renderNewspaperPaper(false)}
             </div>
           ) : (
             <div className="empty-preview">
@@ -479,6 +513,61 @@ ${chatLogText}`;
         </section>
 
       </div>
+
+      {/* プレビュー拡大用モーダル */}
+      {isPreviewZoomed && (
+        <div 
+          className="preview-zoom-overlay" 
+          onClick={() => setIsPreviewZoomed(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out',
+            overflowY: 'auto',
+            padding: '20px 10px',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()} // 新聞の枠内クリックでは閉じないようにする
+            style={{
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              borderRadius: '16px',
+              backgroundColor: '#fbf8f3',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+              margin: 'auto'
+            }}
+          >
+            {renderNewspaperPaper(true)}
+          </div>
+          <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(255, 255, 255, 0.25)',
+            color: '#ffffff',
+            padding: '8px 18px',
+            borderRadius: '20px',
+            fontSize: '0.8rem',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+            fontFamily: 'sans-serif',
+            zIndex: 1001
+          }}>
+            タップすると発行所に戻るよ ✕
+          </div>
+        </div>
+      )}
     </div>
   );
 }
