@@ -347,102 +347,74 @@ function App() {
 
   return (
     <div className="chat-container">
-      <div className="room-toggle-tabs">
-        <button 
-          className={`room-tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chat')}
-        >
-          💬 トーク
-        </button>
-        <button 
-          className={`room-tab-btn ${activeTab === 'room' ? 'active' : ''}`}
-          onClick={() => setActiveTab('room')}
-        >
-          🏡 ひろば
-        </button>
+      <div className="chat-messages">
+        {messages.map((msg, index) => {
+          const isMe = msg.author === userName;
+          const isCat = msg.isCat;
+          const iconInfo = USER_ICONS.find(i => i.id === msg.userIcon);
+          const iconSrc = isCat ? (msg.userIcon || "/icons/neko/default.png") : (iconInfo ? iconInfo.src : "/icons/girl1.png");
+
+          // 日付ヘッダーを表示するかどうかの判定（前のメッセージと比較する純粋なアプローチ）
+          const prevMsg = index > 0 ? messages[index - 1] : null;
+          const msgDateStr = new Date(msg.id).toDateString();
+          const prevMsgDateStr = prevMsg ? new Date(prevMsg.id).toDateString() : null;
+          const showDateHeader = msgDateStr !== prevMsgDateStr;
+
+          return (
+            <Fragment key={msg.id}>
+              {showDateHeader && (
+                <div className="date-header">
+                  <span className="date-header-badge">{getFormattedDate(msg.id)}</span>
+                </div>
+              )}
+              <div className={`message-row ${isMe ? 'me' : 'other'} ${isCat ? 'cat' : ''}`}>
+                {!isMe && (
+                  <div className="avatar-container">
+                      <div className="avatar-frame">
+                         <img src={iconSrc} className="avatar-img" alt={isCat ? "黒猫" : msg.author} />
+                      </div>
+                      <div className="sender-name">{isCat ? "黒猫" : msg.author}</div>
+                  </div>
+                )}
+                {isMe && (
+                  <div className="avatar-container me-avatar">
+                      <div className="avatar-frame">
+                         <img src={iconSrc} className="avatar-img" alt="me" />
+                      </div>
+                  </div>
+                )}
+                <div className="bubble-wrapper">
+                  <div className="bubble">
+                    {msg.text.split('\n').map((line, i) => <Fragment key={i}>{line}<br /></Fragment>)}
+                  </div>
+                  <span className="message-time">{getFormattedTime(msg.id)}</span>
+                </div>
+              </div>
+            </Fragment>
+          );
+        })}
+        {isTyping && (
+          <div className="message-row other cat">
+            <div className="avatar-container">
+               <div className="avatar-frame">
+                  <img src="/icons/neko/default.png" className="avatar-img" alt="猫" />
+               </div>
+               <div className="sender-name">黒猫</div>
+            </div>
+            <div className="bubble thinking">フンッ…考え中じゃ…</div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {activeTab === 'room' && (
-        <AomitsuRoom 
-          db={db}
-          userName={userName}
-          userIcon={userIcon}
+      <form className="input-area" onSubmit={handleSendMessage}>
+        <input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="メッセージを入力…"
         />
-      )}
-
-      {activeTab === 'chat' && (
-        <>
-          <div className="chat-messages">
-            {messages.map((msg, index) => {
-              const isMe = msg.author === userName;
-              const isCat = msg.isCat;
-              const iconInfo = USER_ICONS.find(i => i.id === msg.userIcon);
-              const iconSrc = isCat ? (msg.userIcon || "/icons/neko/default.png") : (iconInfo ? iconInfo.src : "/icons/girl1.png");
-
-              // 日付ヘッダーを表示するかどうかの判定（前のメッセージと比較する純粋なアプローチ）
-              const prevMsg = index > 0 ? messages[index - 1] : null;
-              const msgDateStr = new Date(msg.id).toDateString();
-              const prevMsgDateStr = prevMsg ? new Date(prevMsg.id).toDateString() : null;
-              const showDateHeader = msgDateStr !== prevMsgDateStr;
-
-              return (
-                <Fragment key={msg.id}>
-                  {showDateHeader && (
-                    <div className="date-header">
-                      <span className="date-header-badge">{getFormattedDate(msg.id)}</span>
-                    </div>
-                  )}
-                  <div className={`message-row ${isMe ? 'me' : 'other'} ${isCat ? 'cat' : ''}`}>
-                    {!isMe && (
-                      <div className="avatar-container">
-                          <div className="avatar-frame">
-                             <img src={iconSrc} className="avatar-img" alt={isCat ? "黒猫" : msg.author} />
-                          </div>
-                          <div className="sender-name">{isCat ? "黒猫" : msg.author}</div>
-                      </div>
-                    )}
-                    {isMe && (
-                      <div className="avatar-container me-avatar">
-                          <div className="avatar-frame">
-                             <img src={iconSrc} className="avatar-img" alt="me" />
-                          </div>
-                      </div>
-                    )}
-                    <div className="bubble-wrapper">
-                      <div className="bubble">
-                        {msg.text.split('\n').map((line, i) => <Fragment key={i}>{line}<br /></Fragment>)}
-                      </div>
-                      <span className="message-time">{getFormattedTime(msg.id)}</span>
-                    </div>
-                  </div>
-                </Fragment>
-              );
-            })}
-            {isTyping && (
-              <div className="message-row other cat">
-                <div className="avatar-container">
-                   <div className="avatar-frame">
-                      <img src="/icons/neko/default.png" className="avatar-img" alt="猫" />
-                   </div>
-                   <div className="sender-name">黒猫</div>
-                </div>
-                <div className="bubble thinking">フンッ…考え中じゃ…</div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form className="input-area" onSubmit={handleSendMessage}>
-            <input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="メッセージを入力…"
-            />
-            <button type="submit" className="send-btn" disabled={!inputValue.trim()}>↑</button>
-          </form>
-        </>
-      )}
-
+        <button type="submit" className="send-btn" disabled={!inputValue.trim()}>↑</button>
+      </form>
       <style>{`
         .send-btn:disabled {
           background-color: #ccc;
