@@ -473,13 +473,12 @@ function App() {
           <div className="line-plus-menu" style={{
             display: 'flex',
             width: '100%',
-            gap: '30px',
-            padding: '15px 10px 5px 10px',
+            padding: '15px 20px 5px 20px',
             boxSizing: 'border-box',
             borderTop: '1px solid #eee',
             marginTop: '10px',
             animation: 'fadeInMenu 0.2s ease',
-            justifyContent: 'flex-start'
+            justifyContent: 'space-evenly'
           }}>
             <a href="/room.html" style={{
               display: 'flex',
