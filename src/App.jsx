@@ -75,6 +75,7 @@ function App() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [activeImageUrl, setActiveImageUrl] = useState(null);
   const messagesEndRef = useRef(null);
 
   // 匿名認証の実行
@@ -396,13 +397,7 @@ function App() {
                           display: 'block',
                           cursor: 'pointer' 
                         }} 
-                        onClick={() => {
-                          // クリックで拡大表示や保存がしやすくなるように新規タブで開くなどの工夫
-                          const newTab = window.open();
-                          if (newTab) {
-                            newTab.document.write(`<img src="${msg.text}" style="max-width:100%; max-height:100vh; display:block; margin:auto;" />`);
-                          }
-                        }}
+                        onClick={() => setActiveImageUrl(msg.text)}
                       />
                     ) : (
                       msg.text.split('\n').map((line, i) => <Fragment key={i}>{line}<br /></Fragment>)
@@ -533,6 +528,54 @@ function App() {
           </div>
         )}
       </form>
+      {/* 拡大画像用モーダル（どこでもタップで元の画面へ戻れます） */}
+      {activeImageUrl && (
+        <div 
+          className="image-modal-overlay" 
+          onClick={() => setActiveImageUrl(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeInLightbox 0.2s ease',
+            cursor: 'zoom-out'
+          }}
+        >
+          <img 
+            src={activeImageUrl} 
+            alt="拡大画像" 
+            style={{
+              maxWidth: '95%',
+              maxHeight: '90vh',
+              borderRadius: '8px',
+              boxShadow: '0 4px 25px rgba(0,0,0,0.5)',
+              animation: 'scaleUpLightbox 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }} 
+          />
+          <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            background: 'rgba(255, 255, 255, 0.25)',
+            color: '#ffffff',
+            padding: '8px 18px',
+            borderRadius: '20px',
+            fontSize: '0.8rem',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+            fontFamily: 'sans-serif'
+          }}>
+            タップするとチャットに戻るよ ✕
+          </div>
+        </div>
+      )}
+
       <style>{`
         .send-btn:disabled {
           background-color: #ccc;
@@ -540,6 +583,14 @@ function App() {
         @keyframes fadeInMenu {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInLightbox {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleUpLightbox {
+          from { transform: scale(0.9); }
+          to { transform: scale(1); }
         }
       `}</style>
     </div>
