@@ -214,6 +214,11 @@ function App() {
     let lastRole = null;
 
     currentHistory.slice(-100).forEach(m => {
+      // Base64の画像データはGeminiへの送信履歴から完全に除外（スキップ）する
+      if (m.text && m.text.startsWith('data:image/')) {
+        return;
+      }
+
       const role = m.isCat ? "model" : "user";
       
       const text = m.isCat ? m.text : `${m.author}: ${m.text}`;
