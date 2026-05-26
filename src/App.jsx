@@ -34,6 +34,11 @@ const getFormattedDate = (timestamp) => {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${days[date.getDay()]})`;
 };
 
+const STAMPS = Array.from({ length: 16 }, (_, i) => {
+  const num = String(i + 1).padStart(2, '0');
+  return `/stamps/${num}.png`;
+});
+
 const SYSTEM_INSTRUCTION = `
 あなたはお友達グループ「あおみつLINE」を見守る、黒猫の姿をした「神様」です。
 尊大で自信満々な口調（「我」「〜じゃ」「〜であるぞ」）ですが、内心はお友達を慈しむ優しい性格です。
@@ -74,9 +79,30 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showStamps, setShowStamps] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [activeImageUrl, setActiveImageUrl] = useState(null);
   const messagesEndRef = useRef(null);
+  const stampPickerRef = useRef(null);
+
+  // スタンプ画像のプリロード（先読み）
+  useEffect(() => {
+    STAMPS.forEach(url => {
+      const img = new Image();
+      img.src = url;
+    });
+  }, []);
+
+  // 画面外クリックでスタンプピッカーを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (stampPickerRef.current && !stampPickerRef.current.contains(event.target)) {
+        setShowStamps(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 匿名認証の実行
   useEffect(() => {
@@ -193,6 +219,46 @@ function App() {
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleSendStamp = async (stampUrl) => {
+    const chatRef = ref(db, 'friendChatMessages');
+    let currentAllMessages = [];
+    if (FIREBASE_CONFIGURED) {
+      try {
+        const snapshot = await get(chatRef);
+        if (snapshot.exists()) {
+          currentAllMessages = Object.values(snapshot.val());
+        }
+      } catch (error) {
+        console.error("Failed to fetch current messages for stamp:", error);
+        currentAllMessages = [...messages];
+      }
+    } else {
+      currentAllMessages = [...messages];
+    }
+
+    const newMsg = {
+      id: Date.now(),
+      author: userName,
+      userIcon: userIcon,
+      text: '[スタンプ]',
+      stampUrl: stampUrl,
+      isStamp: true,
+      isCat: false
+    };
+
+    let newHistory = [...currentAllMessages, newMsg];
+    if (newHistory.length > 1000) {
+      newHistory = newHistory.slice(-1000);
+    }
+
+    if (FIREBASE_CONFIGURED) {
+      set(chatRef, newHistory);
+    } else {
+      setMessages(newHistory);
+    }
+    setShowStamps(false);
   };
 
   const askGemini = async (currentHistory, modelIndex = 0, retryCount = 0) => {
@@ -430,8 +496,10 @@ function App() {
                   </div>
                 )}
                 <div className="bubble-wrapper">
-                  <div className="bubble">
-                    {msg.text.startsWith('data:image/') ? (
+                  <div className={`bubble ${msg.isStamp ? 'stamp-bubble' : ''}`}>
+                    {msg.isStamp ? (
+                      <img src={msg.stampUrl} alt="stamp" className="message-stamp" />
+                    ) : msg.text.startsWith('data:image/') ? (
                       <img 
                         src={msg.text} 
                         alt="画像" 
@@ -496,12 +564,48 @@ function App() {
           >
             ＋
           </button>
-          <input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="メッセージを入力…"
-            style={{ flex: 1 }}
-          />
+
+          {/* LINE風のカプセル型入力エリア */}
+          <div className="input-box-wrapper">
+            <input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="メッセージを入力…"
+            />
+            
+            {/* 入力欄の右端に埋め込まれる極細線画のスタンプボタン */}
+            <div className="stamp-wrapper" ref={stampPickerRef}>
+              <button 
+                type="button" 
+                className={`stamp-btn-minimal ${showStamps ? 'active' : ''}`}
+                onClick={() => setShowStamps(!showStamps)}
+              >
+                {/* 極細線画のLINE風スマイルSVG */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={showStamps ? "#06C755" : "#777"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.2s' }}>
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+              </button>
+              
+              {showStamps && (
+                <div className="stamp-picker">
+                  <div className="stamp-grid">
+                    {STAMPS.map((url, i) => (
+                      <img 
+                        key={i} 
+                        src={url} 
+                        alt={`stamp-${i}`} 
+                        onClick={() => handleSendStamp(url)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <button type="submit" className="send-btn" disabled={!inputValue.trim()}>↑</button>
         </div>
 
@@ -659,6 +763,101 @@ function App() {
         .send-btn:disabled {
           background-color: #ccc;
         }
+
+        /* カプセル型入力エリアのスタイル */
+        .input-box-wrapper {
+          display: flex;
+          flex: 1;
+          align-items: center;
+          background-color: #f5f5f5;
+          border-radius: 24px;
+          padding: 2px 14px;
+          position: relative; /* ★ これをスタンプピッカーの基準にする */
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .input-box-wrapper input {
+          flex: 1;
+          border: none !important;
+          background: transparent !important;
+          padding: 10px 4px !important;
+          outline: none !important;
+          font-size: 1rem;
+          box-shadow: none !important;
+        }
+
+        .stamp-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* LINE風ミニマルSVGスタンプボタン */
+        .stamp-btn-minimal {
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px;
+          outline: none;
+          transition: transform 0.1s;
+        }
+
+        .stamp-btn-minimal:active {
+          transform: scale(0.9);
+        }
+
+        /* 入力欄の真上にピッタリと幅を合わせて浮き出るピッカー */
+        .stamp-picker {
+          position: absolute;
+          bottom: 54px; /* 入力欄カプセルの真上 */
+          left: 0;      /* カプセルの左端に完全一致 */
+          right: 0;     /* カプセルの右端に完全一致 */
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 -4px 20px rgba(0,0,0,0.1), 0 4px 20px rgba(0,0,0,0.1);
+          padding: 12px;
+          z-index: 100;
+          height: 240px;
+          box-sizing: border-box;
+          overflow-y: auto; /* ★ 縦スクロール */
+        }
+
+        .stamp-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr); /* 4列表示 */
+          gap: 8px;
+        }
+
+        .stamp-grid img {
+          width: 100%;    /* グリッド幅に自動フィット */
+          aspect-ratio: 1/1; /* 綺麗な正方形 */
+          object-fit: contain;
+          cursor: pointer;
+          border-radius: 8px;
+          transition: transform 0.1s;
+        }
+
+        .stamp-grid img:hover {
+          transform: scale(1.1);
+          background-color: #f5f5f5;
+        }
+
+        .stamp-bubble {
+          background: transparent !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+        }
+
+        .message-stamp {
+          max-width: 150px;
+          width: 100%;
+          display: block;
+          border-radius: 12px;
+        }
+
         @keyframes fadeInMenu {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -670,6 +869,12 @@ function App() {
         @keyframes scaleUpLightbox {
           from { transform: scale(0.9); }
           to { transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+          .message-stamp {
+            max-width: 120px;
+          }
         }
       `}</style>
     </div>
