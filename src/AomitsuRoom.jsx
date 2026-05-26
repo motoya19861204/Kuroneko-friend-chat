@@ -415,14 +415,17 @@ function AomitsuRoom({ db, userName, userIcon }) {
       {/* 部屋の中にいるお友達アバターの描画 */}
       {Object.keys(players).map((name) => {
         const player = players[name];
+        if (!player) return null; // 安全対策: 読み込み途中でプレイヤーが存在しない場合は描画をスキップ
+
         const isMe = name === userName;
+        const currentUserIcon = player.userIcon || userIcon || 'girl1'; // アイコンの安全なフォールバック
         
         // 自分の位置は超低遅延ローカル座標、他人はFirebase同期座標を使用
-        const posX = isMe ? myPos.x : player.x;
-        const posY = isMe ? myPos.y : player.y;
+        const posX = isMe ? myPos.x : (player.x !== undefined ? player.x : 50);
+        const posY = isMe ? myPos.y : (player.y !== undefined ? player.y : 50);
 
         // 基本画像（フォールバック用）: スプライトがない場合は真正面コマ0を使用
-        const fallbackSrc = `/sprites/${player.userIcon}-down-0.png`;
+        const fallbackSrc = `/sprites/${currentUserIcon}-down-0.png`;
         
         // 歩行状態の取得
         let isWalking = false;
@@ -432,10 +435,12 @@ function AomitsuRoom({ db, userName, userIcon }) {
         if (isMe) {
           // 自分自身の場合は、Refから同期的に最新の入力状態を決定（Reactステートの遅延を100%回避）
           let currentDir = null;
-          if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
-          else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
-          else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
-          else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
+          if (activeKeysRef.current && activeKeysRef.current.has) {
+            if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
+            else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
+            else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
+            else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
+          }
 
           if (activeDirRef.current) {
             currentDir = activeDirRef.current;
@@ -445,7 +450,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
             isWalking = true;
             direction = currentDir;
             myLastDirectionRef.current = currentDir;
-            frame = animFrameRef.current;
+            frame = animFrameRef.current !== undefined ? animFrameRef.current : 0;
           } else {
             isWalking = false;
             direction = myLastDirectionRef.current || 'down';
@@ -459,11 +464,11 @@ function AomitsuRoom({ db, userName, userIcon }) {
           frame = state.frame;
         }
 
-        let imgName = `${player.userIcon}-down-0.png`;
+        let imgName = `${currentUserIcon}-down-0.png`;
         if (isWalking) {
-          imgName = `${player.userIcon}-${direction}-${frame}.png`;
+          imgName = `${currentUserIcon}-${direction}-${frame}.png`;
         } else {
-          imgName = `${player.userIcon}-${direction}-0.png`;
+          imgName = `${currentUserIcon}-${direction}-0.png`;
         }
         
         const iconSrc = `/sprites/${imgName}`;
