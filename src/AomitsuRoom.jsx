@@ -519,34 +519,34 @@ function AomitsuRoom({ db, userName, userIcon }) {
       <div className="room-virtual-dpad">
         <button 
           className="dpad-btn dpad-up" 
-          onTouchStart={() => { activeDirRef.current = 'up'; forceUpdate(); }} 
-          onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
-          onMouseDown={() => { activeDirRef.current = 'up'; forceUpdate(); }}
-          onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
+          onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'up'; forceUpdate(); }} 
+          onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+          onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'up'; forceUpdate(); }}
+          onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
         >▲</button>
         <div className="dpad-row-middle">
           <button 
             className="dpad-btn dpad-left" 
-            onTouchStart={() => { activeDirRef.current = 'left'; forceUpdate(); }} 
-            onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
-            onMouseDown={() => { activeDirRef.current = 'left'; forceUpdate(); }}
-            onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
+            onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'left'; forceUpdate(); }} 
+            onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+            onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'left'; forceUpdate(); }}
+            onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
           >◀</button>
           <div className="dpad-center-hub"></div>
           <button 
             className="dpad-btn dpad-right" 
-            onTouchStart={() => { activeDirRef.current = 'right'; forceUpdate(); }} 
-            onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
-            onMouseDown={() => { activeDirRef.current = 'right'; forceUpdate(); }}
-            onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
+            onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'right'; forceUpdate(); }} 
+            onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+            onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'right'; forceUpdate(); }}
+            onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
           >▶</button>
         </div>
         <button 
           className="dpad-btn dpad-down" 
-          onTouchStart={() => { activeDirRef.current = 'down'; forceUpdate(); }} 
-          onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
-          onMouseDown={() => { activeDirRef.current = 'down'; forceUpdate(); }}
-          onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
+          onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'down'; forceUpdate(); }} 
+          onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+          onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'down'; forceUpdate(); }}
+          onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
         >▼</button>
       </div>
     </div>
