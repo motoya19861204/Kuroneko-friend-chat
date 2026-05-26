@@ -82,7 +82,12 @@ function LocalAomitsuRoom({ userName, userIcon }) {
     animInterval = setInterval(() => {
       const isMoving = activeKeysRef.current.size > 0 || activeDirRef.current !== null;
       if (isMoving) {
-        animFrameRef.current = (animFrameRef.current + 1) % 4;
+        // 歩行中は直立(0)を除外し、1 -> 2 -> 3 -> 1 と元気に足を動かし続ける
+        let nextFrame = animFrameRef.current + 1;
+        if (nextFrame > 3 || nextFrame < 1) {
+          nextFrame = 1;
+        }
+        animFrameRef.current = nextFrame;
         forceUpdate(); // コマ送り時に再描画を要求
       }
     }, 120);
@@ -125,7 +130,14 @@ function LocalAomitsuRoom({ userName, userIcon }) {
   // 移動タイマーが決定した「現在の入力された方向」を100%信頼して画像パスを決定する (キー判定の優先度ズレを完全解消)
   const currentDir = myCurrentDirectionRef.current;
   const isWalking = currentDir !== null;
+
+  // 歩き始めた瞬間、直立(0)から即座に歩行コマ(1)に初期化する
+  if (isWalking && (animFrameRef.current === 0 || animFrameRef.current > 3)) {
+    animFrameRef.current = 1;
+  }
+
   const direction = currentDir || myLastDirectionRef.current || 'down';
+  // 歩いている間は 1 -> 2 -> 3 をループし、ボタンを離して止まった瞬間だけ 0 (直立)にする！
   const frame = isWalking ? animFrameRef.current : 0;
 
   // アバター画像のパス作成
