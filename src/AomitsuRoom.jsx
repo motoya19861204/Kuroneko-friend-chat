@@ -28,6 +28,8 @@ function AomitsuRoom({ db, userName, userIcon }) {
   const [players, setPlayers] = useState({});
   const [godQuote, setGodQuote] = useState("");
   const [walkingStates, setWalkingStates] = useState({});
+  const [, setTick] = useState(0);
+  const forceUpdate = () => setTick(t => t + 1);
   
   // 自分用ローカルアバターの制御RefおよびState
   const [myPos, setMyPos] = useState({ x: 50, y: 50 });
@@ -217,14 +219,20 @@ function AomitsuRoom({ db, userName, userIcon }) {
         if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
           e.preventDefault();
         }
-        activeKeysRef.current.add(key);
+        if (!activeKeysRef.current.has(key)) {
+          activeKeysRef.current.add(key);
+          forceUpdate(); // 即座に再レンダリングを実行して向きを0msで変える！
+        }
       }
     };
 
     const handleKeyUp = (e) => {
       const key = e.key.toLowerCase();
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
-        activeKeysRef.current.delete(key);
+        if (activeKeysRef.current.has(key)) {
+          activeKeysRef.current.delete(key);
+          forceUpdate(); // 即座に再レンダリングを実行！
+        }
       }
     };
 
@@ -508,34 +516,34 @@ function AomitsuRoom({ db, userName, userIcon }) {
       <div className="room-virtual-dpad">
         <button 
           className="dpad-btn dpad-up" 
-          onTouchStart={() => activeDirRef.current = 'up'} 
-          onTouchEnd={() => activeDirRef.current = null}
-          onMouseDown={() => activeDirRef.current = 'up'}
-          onMouseUp={() => activeDirRef.current = null}
+          onTouchStart={() => { activeDirRef.current = 'up'; forceUpdate(); }} 
+          onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
+          onMouseDown={() => { activeDirRef.current = 'up'; forceUpdate(); }}
+          onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
         >▲</button>
         <div className="dpad-row-middle">
           <button 
             className="dpad-btn dpad-left" 
-            onTouchStart={() => activeDirRef.current = 'left'} 
-            onTouchEnd={() => activeDirRef.current = null}
-            onMouseDown={() => activeDirRef.current = 'left'}
-            onMouseUp={() => activeDirRef.current = null}
+            onTouchStart={() => { activeDirRef.current = 'left'; forceUpdate(); }} 
+            onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
+            onMouseDown={() => { activeDirRef.current = 'left'; forceUpdate(); }}
+            onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
           >◀</button>
           <div className="dpad-center-hub"></div>
           <button 
             className="dpad-btn dpad-right" 
-            onTouchStart={() => activeDirRef.current = 'right'} 
-            onTouchEnd={() => activeDirRef.current = null}
-            onMouseDown={() => activeDirRef.current = 'right'}
-            onMouseUp={() => activeDirRef.current = null}
+            onTouchStart={() => { activeDirRef.current = 'right'; forceUpdate(); }} 
+            onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
+            onMouseDown={() => { activeDirRef.current = 'right'; forceUpdate(); }}
+            onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
           >▶</button>
         </div>
         <button 
           className="dpad-btn dpad-down" 
-          onTouchStart={() => activeDirRef.current = 'down'} 
-          onTouchEnd={() => activeDirRef.current = null}
-          onMouseDown={() => activeDirRef.current = 'down'}
-          onMouseUp={() => activeDirRef.current = null}
+          onTouchStart={() => { activeDirRef.current = 'down'; forceUpdate(); }} 
+          onTouchEnd={() => { activeDirRef.current = null; forceUpdate(); }}
+          onMouseDown={() => { activeDirRef.current = 'down'; forceUpdate(); }}
+          onMouseUp={() => { activeDirRef.current = null; forceUpdate(); }}
         >▼</button>
       </div>
     </div>
