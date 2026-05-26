@@ -147,18 +147,34 @@ function AomitsuRoom({ db, userName, userIcon }) {
     moveInterval = setInterval(() => {
       let dX = 0;
       let dY = 0;
+      let dir = null;
 
-      // PCキーボード入力判定
-      if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) dY -= 1;
-      if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) dY += 1;
-      if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) dX -= 1;
-      if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) dX += 1;
+      // PCキーボード入力判定から移動方向とキー判定
+      if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) {
+        dY -= 1;
+        dir = 'up';
+      }
+      if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) {
+        dY += 1;
+        dir = 'down';
+      }
+      if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) {
+        dX -= 1;
+        dir = 'left';
+      }
+      if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) {
+        dX += 1;
+        dir = 'right';
+      }
 
-      // スマホ十字キー入力判定
-      if (activeDirRef.current === 'up') dY -= 1;
-      if (activeDirRef.current === 'down') dY += 1;
-      if (activeDirRef.current === 'left') dX -= 1;
-      if (activeDirRef.current === 'right') dX += 1;
+      // スマホ十字キー入力判定（スマホ入力がアクティブな場合はPC入力を上書き）
+      if (activeDirRef.current) {
+        dir = activeDirRef.current;
+        if (dir === 'up') dY -= 1;
+        if (dir === 'down') dY += 1;
+        if (dir === 'left') dX -= 1;
+        if (dir === 'right') dX += 1;
+      }
 
       if (dX !== 0 || dY !== 0) {
         // 斜め移動時の速度の正規化
@@ -173,20 +189,15 @@ function AomitsuRoom({ db, userName, userIcon }) {
         myPosRef.current = { x: clampedX, y: clampedY };
         setMyPos({ x: clampedX, y: clampedY });
 
-        // 移動方向の判定
-        let dir = 'down';
-        if (Math.abs(dX) > Math.abs(dY)) {
-          dir = dX > 0 ? 'right' : 'left';
-        } else {
-          dir = dY > 0 ? 'down' : 'up';
-        }
+        // もし方向（dir）が未定義の場合のフォールバック
+        if (!dir) dir = 'down';
 
         // 歩行ステート更新
         setWalkingStates(prev => ({
           ...prev,
           [userName]: {
             isWalking: true,
-            direction: dir,
+            direction: dir, // ★ 押されたボタン直結の方向！
             frame: animFrame
           }
         }));
@@ -203,7 +214,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
               ...prev,
               [userName]: {
                 isWalking: false,
-                direction: myState.direction,
+                direction: myState.direction, // 現在の向きを維持
                 frame: 0
               }
             };

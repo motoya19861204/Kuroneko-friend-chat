@@ -231,32 +231,43 @@
   padding: 5px;
   box-sizing: border-box;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   touch-action: none;
 }
 
 .dpad-btn {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: #FFFBF0; /* 少し温かみのある白 */
+  border: 1px solid #d0c4b0;
   color: #555;
   width: 32px;
   height: 32px;
   border-radius: 8px;
   font-size: 0.9rem;
+  font-weight: bold;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   outline: none;
-  transition: background 0.1s, transform 0.1s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  /* 気持ちいい3Dプッシュ用の初期シャドウとトランジション */
+  transition: all 0.05s ease-out;
+  box-shadow: 0 4px 0 #d0c4b0, 0 5px 10px rgba(0,0,0,0.15);
+  position: relative;
+  top: -4px; /* 最初は上に浮かせておく */
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   touch-action: none;
 }
 
-.dpad-btn:active {
+.dpad-btn:active, .dpad-btn.active {
   background: #8CE839;
+  border-color: #72c42c;
   color: white;
-  transform: scale(0.9);
+  /* カチッと3Dプッシュされ沈む表現 */
+  box-shadow: 0 0px 0 transparent, 0 1px 3px rgba(0,0,0,0.1);
+  top: 0px; /* 4px沈む */
 }
 
 .dpad-row-middle {
@@ -266,6 +277,9 @@
   justify-content: space-between;
   padding: 2px 0;
   box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .dpad-center-hub {
@@ -273,6 +287,9 @@
   height: 28px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 50%;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .dpad-up {
