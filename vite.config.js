@@ -11,6 +11,7 @@ export default defineConfig({
         main: './index.html',
         room: './room.html',
         newspaper: './newspaper.html',
+        local_room: './local-room.html',
       },
     },
   },
