@@ -10,6 +10,7 @@ function LocalAomitsuRoom({ userName, userIcon }) {
   const activeKeysRef = useRef(new Set()); // 押されているキー
   const activeDirRef = useRef(null); // 十字キーの方向
   const myLastDirectionRef = useRef('down'); // 最後の方向
+  const myCurrentDirectionRef = useRef(null); // 現在入力されている方向 (静止時はnull)
   const animFrameRef = useRef(0); // 歩行アニメーションのコマ (0〜3)
   
   // 強制再描画トリガー (入力変化の瞬間に0msで画面に反映するための仕組み)
@@ -55,6 +56,8 @@ function LocalAomitsuRoom({ userName, userIcon }) {
         if (dir === 'left') dX -= 1;
         if (dir === 'right') dX += 1;
       }
+
+      myCurrentDirectionRef.current = dir; // 現在入力されている方向をRefに保存
 
       if (dX !== 0 || dY !== 0) {
         // 斜め移動時の速度の正規化
@@ -119,18 +122,8 @@ function LocalAomitsuRoom({ userName, userIcon }) {
     };
   }, [userName, userIcon]);
 
-  // 現在の入力状態から、今向くべき方向と歩行状態を同期的に決定
-  let currentDir = null;
-  if (activeKeysRef.current && activeKeysRef.current.has) {
-    if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
-    else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
-    else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
-    else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
-  }
-  if (activeDirRef.current) {
-    currentDir = activeDirRef.current;
-  }
-
+  // 移動タイマーが決定した「現在の入力された方向」を100%信頼して画像パスを決定する (キー判定の優先度ズレを完全解消)
+  const currentDir = myCurrentDirectionRef.current;
   const isWalking = currentDir !== null;
   const direction = currentDir || myLastDirectionRef.current || 'down';
   const frame = isWalking ? animFrameRef.current : 0;
@@ -211,6 +204,14 @@ function LocalAomitsuRoom({ userName, userIcon }) {
           onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'down'; forceUpdate(); }}
           onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
         >▼</button>
+      </div>
+      {/* 全アバター画像のプリロード（チラつき・一瞬消える現象を100%防止する最強の仕組み） */}
+      <div style={{ display: 'none' }}>
+        {['down', 'up', 'left', 'right'].map(dir => 
+          [0, 1, 2, 3].map(f => (
+            <img key={`${dir}-${f}`} src={`/sprites/${userIcon}-${dir}-${f}.png`} alt="preload" />
+          ))
+        )}
       </div>
     </div>
   );
