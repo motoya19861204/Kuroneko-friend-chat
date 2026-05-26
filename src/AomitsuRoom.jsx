@@ -123,7 +123,6 @@ function AomitsuRoom({ db, userName, userIcon }) {
   useEffect(() => {
     let moveInterval = null;
     let animInterval = null;
-    let animFrame = 0;
 
     const SPEED = 0.55; // 1フレームあたりの移動速度(%)
     const SEND_INTERVAL = 110; // Firebaseへの送信間隔(ms)
@@ -187,40 +186,16 @@ function AomitsuRoom({ db, userName, userIcon }) {
         const clampedY = Math.max(10, Math.min(88, nextY));
 
         myPosRef.current = { x: clampedX, y: clampedY };
-        setMyPos({ x: clampedX, y: clampedY });
+        setMyPos({ x: clampedX, y: clampedY }); // これにより瞬時に再描画が走る
 
-        // もし方向（dir）が未定義の場合のフォールバック
-        if (!dir) dir = 'down';
-
-        // 歩行ステート更新
-        setWalkingStates(prev => ({
-          ...prev,
-          [userName]: {
-            isWalking: true,
-            direction: dir, // ★ 押されたボタン直結の方向！
-            frame: animFrame
-          }
-        }));
+        if (dir) {
+          myLastDirectionRef.current = dir;
+        }
 
         syncPositionToFirebase();
       } else {
-        // 静止したとき
-        setWalkingStates(prev => {
-          const myState = prev[userName];
-          if (myState && myState.isWalking) {
-            // 静止した最後の瞬間を確実にFirebaseに送信
-            syncPositionToFirebase(true);
-            return {
-              ...prev,
-              [userName]: {
-                isWalking: false,
-                direction: myState.direction, // 現在の向きを維持
-                frame: 0
-              }
-            };
-          }
-          return prev;
-        });
+        // 静止したとき、最後の静止座標を確実に同期
+        syncPositionToFirebase(true);
       }
     }, 24);
 
@@ -228,7 +203,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
     animInterval = setInterval(() => {
       const isMoving = activeKeysRef.current.size > 0 || activeDirRef.current !== null;
       if (isMoving) {
-        animFrame = (animFrame + 1) % 4;
+        animFrameRef.current = (animFrameRef.current + 1) % 4;
       }
     }, 130);
 
@@ -450,15 +425,45 @@ function AomitsuRoom({ db, userName, userIcon }) {
         const fallbackSrc = `/sprites/${player.userIcon}-down-0.png`;
         
         // 歩行状態の取得
-        const state = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
-        let imgName = `${player.userIcon}-down-0.png`;
-        
-        if (state.isWalking) {
-          // 歩行中: 方向とコマを反映
-          imgName = `${player.userIcon}-${state.direction}-${state.frame}.png`;
+        let isWalking = false;
+        let direction = 'down';
+        let frame = 0;
+
+        if (isMe) {
+          // 自分自身の場合は、Refから同期的に最新の入力状態を決定（Reactステートの遅延を100%回避）
+          let currentDir = null;
+          if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
+          else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
+          else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
+          else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
+
+          if (activeDirRef.current) {
+            currentDir = activeDirRef.current;
+          }
+
+          if (currentDir) {
+            isWalking = true;
+            direction = currentDir;
+            myLastDirectionRef.current = currentDir;
+            frame = animFrameRef.current;
+          } else {
+            isWalking = false;
+            direction = myLastDirectionRef.current || 'down';
+            frame = 0;
+          }
         } else {
-          // 停止中: 最後に歩いていた方向のコマ0
-          imgName = `${player.userIcon}-${state.direction}-0.png`;
+          // 他人の場合は、Firebase同期スレッドで更新される walkingStates を使用
+          const state = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
+          isWalking = state.isWalking;
+          direction = state.direction;
+          frame = state.frame;
+        }
+
+        let imgName = `${player.userIcon}-down-0.png`;
+        if (isWalking) {
+          imgName = `${player.userIcon}-${direction}-${frame}.png`;
+        } else {
+          imgName = `${player.userIcon}-${direction}-0.png`;
         }
         
         const iconSrc = `/sprites/${imgName}`;
