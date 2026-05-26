@@ -38,6 +38,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
   const activeDirRef = useRef(null); // 押されているスマホ十字キーの方向
   const lastSentTimeRef = useRef(0); // Firebaseへの最終送信タイムスタンプ
   const myLastDirectionRef = useRef('down'); // 自分が最後に選択した歩行方向
+  const myCurrentDirectionRef = useRef(null); // 現在入力されている方向（静止時はnull）
   const animFrameRef = useRef(0); // 自分のアニメーションフレーム (Reactステート遅延を回避するためRefで同期管理)
   
   const prevPlayersRef = useRef({});
@@ -196,6 +197,8 @@ function AomitsuRoom({ db, userName, userIcon }) {
         if (dir === 'right') dX += 1;
       }
 
+      myCurrentDirectionRef.current = dir; // 現在入力されている方向をRefに保存
+
       if (dX !== 0 || dY !== 0) {
         // 斜め移動時の速度の正規化
         const length = Math.sqrt(dX * dX + dY * dY);
@@ -224,7 +227,12 @@ function AomitsuRoom({ db, userName, userIcon }) {
     animInterval = setInterval(() => {
       const isMoving = activeKeysRef.current.size > 0 || activeDirRef.current !== null;
       if (isMoving) {
-        animFrameRef.current = (animFrameRef.current + 1) % 4;
+        // 歩行中は直立(0)を除外し、1 -> 2 -> 3 -> 1 と元気に足を動かし続ける
+        let nextFrame = animFrameRef.current + 1;
+        if (nextFrame > 3 || nextFrame < 1) {
+          nextFrame = 1;
+        }
+        animFrameRef.current = nextFrame;
       }
     }, 130);
 
@@ -449,28 +457,17 @@ function AomitsuRoom({ db, userName, userIcon }) {
 
         if (isMe) {
           // 自分自身の場合は、Refから同期的に最新の入力状態を決定（Reactステートの遅延を100%回避）
-          let currentDir = null;
-          if (activeKeysRef.current && activeKeysRef.current.has) {
-            if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
-            else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
-            else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
-            else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
+          const currentDir = myCurrentDirectionRef.current;
+          isWalking = currentDir !== null;
+
+          // 歩き始めた瞬間、直立(0)から即座に歩行コマ(1)に初期化する
+          if (isWalking && (animFrameRef.current === 0 || animFrameRef.current > 3)) {
+            animFrameRef.current = 1;
           }
 
-          if (activeDirRef.current) {
-            currentDir = activeDirRef.current;
-          }
-
-          if (currentDir) {
-            isWalking = true;
-            direction = currentDir;
-            myLastDirectionRef.current = currentDir;
-            frame = animFrameRef.current !== undefined ? animFrameRef.current : 0;
-          } else {
-            isWalking = false;
-            direction = myLastDirectionRef.current || 'down';
-            frame = 0;
-          }
+          direction = currentDir || myLastDirectionRef.current || 'down';
+          // 歩いている間は 1 -> 2 -> 3 をループし、ボタンを離して止まった瞬間だけ 0 (直立)にする！
+          frame = isWalking ? animFrameRef.current : 0;
         } else {
           // 他人の場合は、Firebase同期スレッドで更新される walkingStates または Firebaseの最新値を使用
           const state = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
@@ -548,6 +545,14 @@ function AomitsuRoom({ db, userName, userIcon }) {
           onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'down'; forceUpdate(); }}
           onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
         >▼</button>
+      </div>
+      {/* 全アバター画像のプリロード（チラつき・一瞬消える現象を100%防止する最強の仕組み） */}
+      <div style={{ display: 'none' }}>
+        {['down', 'up', 'left', 'right'].map(dir => 
+          [0, 1, 2, 3].map(f => (
+            <img key={`${dir}-${f}`} src={`/sprites/${userIcon}-${dir}-${f}.png`} alt="preload" />
+          ))
+        )}
       </div>
     </div>
   );

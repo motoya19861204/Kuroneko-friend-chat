@@ -15,36 +15,6 @@ const USER_ICONS = [
   { id: 'boy4', name: '男の子4', src: '/icons/boy4.png' },
 ];
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught an error", error, errorInfo);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: '20px', color: 'red', background: '#fff', zIndex: 9999, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'auto', textAlign: 'left', fontFamily: 'monospace' }}>
-          <h2>🚨 エラーが発生しました（Antigravityデバッグ画面） 🚨</h2>
-          <p>このエラー内容をそのままAIアシスタントにチャットで教えてください！</p>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#eee', padding: '10px', borderRadius: '5px' }}>
-            {this.state.error && this.state.error.toString()}
-          </pre>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#eee', padding: '10px', borderRadius: '5px' }}>
-            {this.state.error && this.state.error.stack}
-          </pre>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 function RoomApp() {
   const storedName = localStorage.getItem('userName') || '';
   const storedIcon = localStorage.getItem('userIcon') || 'girl1';
@@ -116,9 +86,7 @@ function RoomApp() {
 
   return (
     <div className="app-wrapper" style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      <ErrorBoundary>
-        <AomitsuRoom db={db} userName={userName} userIcon={userIcon} />
-      </ErrorBoundary>
+      <AomitsuRoom db={db} userName={userName} userIcon={userIcon} />
     </div>
   );
 }
