@@ -52,6 +52,7 @@
 
 body {
   margin: 0;
+  background-color: #7b8e9b; /* PC表示時の左右の余白をLINE風の優しいブルーグレーにして世界観を統一 */
 }
 
 #root {

@@ -3,7 +3,9 @@
 .aomitsu-room-container {
   position: relative;
   width: 100%;
-  height: 100%; /* ひろば全体が画面いっぱいに広がるように100%へ変更 */
+  max-width: 430px; /* LINEのトーク画面に合わせたスタイリッシュな最大幅 */
+  height: 100vh; /* 画面いっぱいの高さ */
+  margin: 0 auto; /* PCで開いた時に自動で画面中央に配置 */
   background-color: #E2D3B7; /* 優しいウッドカラーのフォールバック */
   /* あたたかみのある優しいフローリング柄のパターン */
   background-image: 
@@ -12,7 +14,7 @@
   background-size: 60px 100%, 100% 20px;
   border-bottom: 3px solid #5B7A99;
   overflow: hidden;
-  box-shadow: inset 0 -10px 20px rgba(0,0,0,0.05);
+  box-shadow: 0 0 40px rgba(0,0,0,0.2), inset 0 -10px 20px rgba(0,0,0,0.05); /* 美しく浮き立つリッチな影 */
   cursor: pointer;
   user-select: none;
 }

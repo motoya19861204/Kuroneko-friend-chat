@@ -2,10 +2,13 @@
 
 .local-room-container {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  max-width: 430px; /* LINEのトーク画面に合わせたスタイリッシュな最大幅 */
+  height: 100vh; /* 画面いっぱいの高さ */
+  margin: 0 auto; /* PCで開いた時に自動で画面中央に配置 */
   background-color: #E2D3B7;
   overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,0.2); /* 美しく浮き立つリッチな影 */
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
