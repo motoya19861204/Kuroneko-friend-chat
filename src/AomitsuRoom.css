@@ -109,12 +109,17 @@
   width: 64px; /* 全身ドット絵がトコトコ歩くサイズ */
   height: 64px;
   z-index: 5;
-  /* 0.8秒かけてトコトコと滑らかに歩く */
-  transition: left 0.8s ease-out, top 0.8s ease-out;
+  /* 他人の移動を滑らかに補間する linear トランジション（カクつき排除） */
+  transition: left 0.11s linear, top 0.11s linear;
   transform: translate(-50%, -80%); /* キャラクターの足元がタップ位置と一致するようにY軸を調整 */
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* 自分のアバター（ローカル移動と干渉しないようトランジションを即時（なし）に設定） */
+.avatar-node.is-me {
+  transition: none !important;
 }
 
 /* アバター画像 */
@@ -203,4 +208,101 @@
   color: white;
   background-color: rgba(255, 255, 255, 0.12);
   border-bottom: 3px solid #8CE839;
+}
+
+/* スマホ用のバーチャル十字キー（D-Pad） - ガラスモルフィズム風 */
+.room-virtual-dpad {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 120px;
+  height: 120px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  padding: 5px;
+  box-sizing: border-box;
+  user-select: none;
+  touch-action: none;
+}
+
+.dpad-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  color: #555;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: background 0.1s, transform 0.1s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  user-select: none;
+  touch-action: none;
+}
+
+.dpad-btn:active {
+  background: #8CE839;
+  color: white;
+  transform: scale(0.9);
+}
+
+.dpad-row-middle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+  box-sizing: border-box;
+}
+
+.dpad-center-hub {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+
+.dpad-up {
+  margin-bottom: 2px;
+}
+
+.dpad-down {
+  margin-top: 2px;
+}
+
+/* PC用の操作案内ラベル */
+.room-instruction-label {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-family: sans-serif;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .room-instruction-label {
+    display: none; /* スマホではPC案内を非表示 */
+  }
 }
