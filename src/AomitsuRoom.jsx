@@ -35,6 +35,8 @@ function AomitsuRoom({ db, userName, userIcon }) {
   const activeKeysRef = useRef(new Set()); // 押されているPCキーのセット
   const activeDirRef = useRef(null); // 押されているスマホ十字キーの方向
   const lastSentTimeRef = useRef(0); // Firebaseへの最終送信タイムスタンプ
+  const myLastDirectionRef = useRef('down'); // 自分が最後に選択した歩行方向
+  const animFrameRef = useRef(0); // 自分のアニメーションフレーム (Reactステート遅延を回避するためRefで同期管理)
   
   const prevPlayersRef = useRef({});
   const walkTimersRef = useRef({});
