@@ -135,11 +135,28 @@ function AomitsuRoom({ db, userName, userIcon }) {
     const syncPositionToFirebase = (force = false) => {
       const now = Date.now();
       if (force || now - lastSentTimeRef.current >= SEND_INTERVAL) {
+        // 現在の入力状態から向きと歩行状態を決定
+        let currentDir = null;
+        if (activeKeysRef.current && activeKeysRef.current.has) {
+          if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
+          else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
+          else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
+          else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
+        }
+        if (activeDirRef.current) {
+          currentDir = activeDirRef.current;
+        }
+
+        const isWalking = currentDir !== null;
+        const direction = currentDir || myLastDirectionRef.current || 'down';
+
         const myPlayerRef = ref(db, `roomPlayers/${userName}`);
         set(myPlayerRef, {
           userIcon: userIcon,
           x: myPosRef.current.x,
           y: myPosRef.current.y,
+          direction: direction,
+          isWalking: isWalking,
           lastActive: now
         });
         lastSentTimeRef.current = now;
@@ -247,7 +264,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
     };
   }, [userName, userIcon, db]);
 
-  // 1.8. 【他人の移動同期】 Firebaseの座標変化を検知して、他の人の歩行アニメーションを実行
+  // 1.8. 【他人の移動同期】 Firebaseの向き・歩行状態をリアルタイム同期
   useEffect(() => {
     const newWalkingStates = { ...walkingStates };
     let hasChanged = false;
@@ -257,71 +274,57 @@ function AomitsuRoom({ db, userName, userIcon }) {
       if (name === userName) return;
 
       const player = players[name];
-      if (!player || player.x === undefined || player.y === undefined) return; // プレイヤー情報や座標が不完全な場合は安全にスキップ
+      if (!player) return;
 
-      const prevPlayer = prevPlayersRef.current[name];
-      if (!prevPlayer || prevPlayer.x === undefined || prevPlayer.y === undefined) {
-        prevPlayersRef.current[name] = player;
-        return;
-      }
+      const isWalking = player.isWalking || false;
+      const direction = player.direction || 'down';
 
-      const dX = player.x - prevPlayer.x;
-      const dY = player.y - prevPlayer.y;
+      // 以前のステートを取得
+      const currentState = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
 
-      if (Math.abs(dX) > 0.4 || Math.abs(dY) > 0.4) {
-        let dir = 'down';
-        if (Math.abs(dX) > Math.abs(dY)) {
-          dir = dX > 0 ? 'right' : 'left';
-        } else {
-          dir = dY > 0 ? 'down' : 'up';
-        }
-
+      // 向きや歩行状態が変わった場合のみステート更新
+      if (currentState.isWalking !== isWalking || currentState.direction !== direction) {
         newWalkingStates[name] = {
-          isWalking: true,
-          direction: dir,
-          frame: 0
+          isWalking: isWalking,
+          direction: direction,
+          frame: isWalking ? (currentState.frame || 0) : 0
         };
         hasChanged = true;
 
-        if (walkTimersRef.current[name]) {
-          clearInterval(walkTimersRef.current[name].interval);
-          clearTimeout(walkTimersRef.current[name].timeout);
+        // 歩行中のコマ送りアニメーションタイマーの管理
+        if (isWalking) {
+          // すでにタイマーがあればクリア
+          if (walkTimersRef.current[name]) {
+            clearInterval(walkTimersRef.current[name]);
+          }
+          
+          let currentFrame = currentState.frame || 0;
+          walkTimersRef.current[name] = setInterval(() => {
+            currentFrame = (currentFrame + 1) % 4;
+            setWalkingStates(prev => {
+              if (prev[name] && prev[name].isWalking) {
+                return {
+                  ...prev,
+                  [name]: {
+                    ...prev[name],
+                    frame: currentFrame
+                  }
+                };
+              }
+              return prev;
+            });
+          }, 130);
+        } else {
+          // 静止した場合はタイマーを削除
+          if (walkTimersRef.current[name]) {
+            clearInterval(walkTimersRef.current[name]);
+            delete walkTimersRef.current[name];
+          }
         }
-
-        let currentFrame = 0;
-        const intervalId = setInterval(() => {
-          currentFrame = (currentFrame + 1) % 4;
-          setWalkingStates(prev => ({
-            ...prev,
-            [name]: {
-              ...prev[name],
-              frame: currentFrame
-            }
-          }));
-        }, 150);
-
-        const timeoutId = setTimeout(() => {
-          clearInterval(intervalId);
-          setWalkingStates(prev => ({
-            ...prev,
-            [name]: {
-              isWalking: false,
-              direction: dir,
-              frame: 0
-            }
-          }));
-        }, 300); // 同期更新間隔に合わせたスムーズ歩行時間
-
-        walkTimersRef.current[name] = {
-          interval: intervalId,
-          timeout: timeoutId
-        };
       }
     });
 
-    prevPlayersRef.current = players;
     if (hasChanged) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWalkingStates(newWalkingStates);
     }
   }, [players, userName]);
@@ -469,10 +472,10 @@ function AomitsuRoom({ db, userName, userIcon }) {
             frame = 0;
           }
         } else {
-          // 他人の場合は、Firebase同期スレッドで更新される walkingStates を使用
+          // 他人の場合は、Firebase同期スレッドで更新される walkingStates または Firebaseの最新値を使用
           const state = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
-          isWalking = state.isWalking;
-          direction = state.direction;
+          isWalking = player.isWalking !== undefined ? player.isWalking : state.isWalking;
+          direction = player.direction || state.direction || 'down';
           frame = state.frame;
         }
 
