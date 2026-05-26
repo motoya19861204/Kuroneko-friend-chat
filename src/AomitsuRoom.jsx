@@ -202,7 +202,10 @@ function AomitsuRoom({ db, userName, userIcon }) {
       if (dX !== 0 || dY !== 0) {
         // 斜め移動時の速度の正規化
         const length = Math.sqrt(dX * dX + dY * dY);
-        const nextX = myPosRef.current.x + (dX / length) * SPEED;
+        // 縦長コンテナ(最大幅430px)による横移動の物理ピクセル速度の低下を100%解消するため、
+        // アスペクト比補正（通常、縦の高さは横幅の約2.0倍）を横方向の速度に適用してキビキビとした等速移動を実現します！
+        const ASPECT_RATIO_ADJUST = 2.0;
+        const nextX = myPosRef.current.x + ((dX / length) * SPEED) * ASPECT_RATIO_ADJUST;
         const nextY = myPosRef.current.y + (dY / length) * SPEED;
 
         // マップの壁衝突判定（アバターの移動可能領域）
