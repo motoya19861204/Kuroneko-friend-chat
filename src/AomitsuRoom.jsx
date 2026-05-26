@@ -247,8 +247,10 @@ function AomitsuRoom({ db, userName, userIcon }) {
       if (name === userName) return;
 
       const player = players[name];
+      if (!player || player.x === undefined || player.y === undefined) return; // プレイヤー情報や座標が不完全な場合は安全にスキップ
+
       const prevPlayer = prevPlayersRef.current[name];
-      if (!prevPlayer) {
+      if (!prevPlayer || prevPlayer.x === undefined || prevPlayer.y === undefined) {
         prevPlayersRef.current[name] = player;
         return;
       }
