@@ -271,7 +271,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
 
     Object.keys(players).forEach(name => {
       // 自分以外のプレイヤーのみ同期歩行アニメの対象にする
-      if (name === userName) return;
+      if (name.normalize('NFC') === userName.normalize('NFC')) return;
 
       const player = players[name];
       if (!player) return;
@@ -432,7 +432,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
         const player = players[name];
         if (!player) return null; // 安全対策: 読み込み途中でプレイヤーが存在しない場合は描画をスキップ
 
-        const isMe = name === userName;
+        const isMe = name.normalize('NFC') === userName.normalize('NFC');
         const currentUserIcon = player.userIcon || userIcon || 'girl1'; // アイコンの安全なフォールバック
         
         // 自分の位置は超低遅延ローカル座標、他人はFirebase同期座標を使用
