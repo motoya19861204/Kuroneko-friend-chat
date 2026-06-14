@@ -28,20 +28,18 @@ function AomitsuRoom({ db, userName, userIcon }) {
   const [players, setPlayers] = useState({});
   const [godQuote, setGodQuote] = useState("");
   const [walkingStates, setWalkingStates] = useState({});
-  const [, setTick] = useState(0);
-  const forceUpdate = () => setTick(t => t + 1);
   
-  // 自分用ローカルアバターの制御RefおよびState
+  // 自分用ローカルアバターの制御RefおよびState（ESLint/React19準拠の完全なReactステート）
   const [myPos, setMyPos] = useState({ x: 50, y: 50 });
+  const [myDirection, setMyDirection] = useState('down');
+  const [myIsWalking, setMyIsWalking] = useState(false);
+  const [myFrame, setMyFrame] = useState(0);
+
   const myPosRef = useRef({ x: 50, y: 50 });
   const activeKeysRef = useRef(new Set()); // 押されているPCキーのセット
   const activeDirRef = useRef(null); // 押されているスマホ十字キーの方向
   const lastSentTimeRef = useRef(0); // Firebaseへの最終送信タイムスタンプ
-  const myLastDirectionRef = useRef('down'); // 自分が最後に選択した歩行方向
-  const myCurrentDirectionRef = useRef(null); // 現在入力されている方向（静止時はnull）
-  const animFrameRef = useRef(0); // 自分のアニメーションフレーム (Reactステート遅延を回避するためRefで同期管理)
   
-  const prevPlayersRef = useRef({});
   const walkTimersRef = useRef({});
   const quoteTimerRef = useRef(null);
   const roomRef = useRef(null);
@@ -106,17 +104,14 @@ function AomitsuRoom({ db, userName, userIcon }) {
     // Page Visibility API による画面の表示・非表示の連携
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        // 画面が隠れたら即座に自動退室
         exitRoom();
       } else if (document.visibilityState === 'visible') {
-        // 画面が再び見えたら自動で初期位置に再入室
         enterRoom();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // クリーンアップ（アンマウント時）
     return () => {
       unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -129,27 +124,13 @@ function AomitsuRoom({ db, userName, userIcon }) {
     let moveInterval = null;
     let animInterval = null;
 
-    const SPEED = 0.55; // 1フレームあたりの移動速度(%)
     const SEND_INTERVAL = 110; // Firebaseへの送信間隔(ms)
 
     // Firebaseへの同期処理 (間引き送信)
-    const syncPositionToFirebase = (force = false) => {
+    const syncPositionToFirebase = (force = false, currentDir = null, isWalkingNow = false) => {
       const now = Date.now();
       if (force || now - lastSentTimeRef.current >= SEND_INTERVAL) {
-        // 現在の入力状態から向きと歩行状態を決定
-        let currentDir = null;
-        if (activeKeysRef.current && activeKeysRef.current.has) {
-          if (activeKeysRef.current.has('arrowup') || activeKeysRef.current.has('w')) currentDir = 'up';
-          else if (activeKeysRef.current.has('arrowdown') || activeKeysRef.current.has('s')) currentDir = 'down';
-          else if (activeKeysRef.current.has('arrowleft') || activeKeysRef.current.has('a')) currentDir = 'left';
-          else if (activeKeysRef.current.has('arrowright') || activeKeysRef.current.has('d')) currentDir = 'right';
-        }
-        if (activeDirRef.current) {
-          currentDir = activeDirRef.current;
-        }
-
-        const isWalking = currentDir !== null;
-        const direction = currentDir || myLastDirectionRef.current || 'down';
+        const direction = currentDir || 'down';
 
         const myPlayerRef = ref(db, `roomPlayers/${userName}`);
         set(myPlayerRef, {
@@ -157,7 +138,7 @@ function AomitsuRoom({ db, userName, userIcon }) {
           x: myPosRef.current.x,
           y: myPosRef.current.y,
           direction: direction,
-          isWalking: isWalking,
+          isWalking: isWalkingNow,
           lastActive: now
         });
         lastSentTimeRef.current = now;
@@ -197,16 +178,35 @@ function AomitsuRoom({ db, userName, userIcon }) {
         if (dir === 'right') dX += 1;
       }
 
-      myCurrentDirectionRef.current = dir; // 現在入力されている方向をRefに保存
+      const walking = dir !== null;
+      setMyIsWalking(walking);
+
+      if (dir) {
+        setMyDirection(dir);
+      } else {
+        setMyFrame(0); // 止まったら即直立コマに戻す
+      }
 
       if (dX !== 0 || dY !== 0) {
         // 斜め移動時の速度の正規化
         const length = Math.sqrt(dX * dX + dY * dY);
-        // 縦長コンテナ(最大幅430px)による横移動の物理ピクセル速度の低下を100%解消するため、
-        // アスペクト比補正（通常、縦の高さは横幅の約2.0倍）を横方向の速度に適用してキビキビとした等速移動を実現します！
-        const ASPECT_RATIO_ADJUST = 2.0;
-        const nextX = myPosRef.current.x + ((dX / length) * SPEED) * ASPECT_RATIO_ADJUST;
-        const nextY = myPosRef.current.y + (dY / length) * SPEED;
+        
+        // 1フレーム(24ms)あたりの移動速度を物理ピクセル（px）で定義
+        // LocalRoom(16msあたり4.5px = 0.281px/ms)と物理速度を完全に同期するため、
+        // 0.281 * 24ms = 約6.75px に設定します！これで完璧な等速移動になります。
+        const SPEED_PX = 6.75;
+        
+        // コンテナの実際のピクセルサイズを取得（取得できない場合はデフォルト幅430px, 高さ850pxをフォールバック）
+        const containerWidth = roomRef.current ? roomRef.current.clientWidth : 430;
+        const containerHeight = roomRef.current ? roomRef.current.clientHeight : 850;
+        
+        // ピクセル単位 of 移動ベクトルを算出
+        const vx = (dX / length) * SPEED_PX;
+        const vy = (dY / length) * SPEED_PX;
+        
+        // 物理ピクセル移動量をパーセント座標に変換して現在の座標に加算
+        const nextX = myPosRef.current.x + (vx / containerWidth) * 100;
+        const nextY = myPosRef.current.y + (vy / containerHeight) * 100;
 
         // マップの壁衝突判定（アバターの移動可能領域）
         const clampedX = Math.max(3, Math.min(97, nextX));
@@ -215,14 +215,10 @@ function AomitsuRoom({ db, userName, userIcon }) {
         myPosRef.current = { x: clampedX, y: clampedY };
         setMyPos({ x: clampedX, y: clampedY }); // これにより瞬時に再描画が走る
 
-        if (dir) {
-          myLastDirectionRef.current = dir;
-        }
-
-        syncPositionToFirebase();
+        syncPositionToFirebase(false, dir || myDirection, walking);
       } else {
         // 静止したとき、最後の静止座標を確実に同期
-        syncPositionToFirebase(true);
+        syncPositionToFirebase(true, myDirection, false);
       }
     }, 24);
 
@@ -231,11 +227,13 @@ function AomitsuRoom({ db, userName, userIcon }) {
       const isMoving = activeKeysRef.current.size > 0 || activeDirRef.current !== null;
       if (isMoving) {
         // 歩行中は直立(0)を除外し、1 -> 2 -> 3 -> 1 と元気に足を動かし続ける
-        let nextFrame = animFrameRef.current + 1;
-        if (nextFrame > 3 || nextFrame < 1) {
-          nextFrame = 1;
-        }
-        animFrameRef.current = nextFrame;
+        setMyFrame(f => {
+          let nextFrame = f + 1;
+          if (nextFrame > 3 || nextFrame < 1) {
+            nextFrame = 1;
+          }
+          return nextFrame;
+        });
       }
     }, 130);
 
@@ -243,13 +241,21 @@ function AomitsuRoom({ db, userName, userIcon }) {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
-        // スペースキーなどでの不要な画面スクロールを防止
         if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
           e.preventDefault();
         }
         if (!activeKeysRef.current.has(key)) {
           activeKeysRef.current.add(key);
-          forceUpdate(); // 即座に再レンダリングを実行して向きを0msで変える！
+          
+          let dir = 'down';
+          if (['arrowup', 'w'].includes(key)) dir = 'up';
+          if (['arrowdown', 's'].includes(key)) dir = 'down';
+          if (['arrowleft', 'a'].includes(key)) dir = 'left';
+          if (['arrowright', 'd'].includes(key)) dir = 'right';
+
+          setMyDirection(dir);
+          setMyIsWalking(true);
+          setMyFrame(1); // 即座に歩行フレームを1にする
         }
       }
     };
@@ -259,7 +265,11 @@ function AomitsuRoom({ db, userName, userIcon }) {
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
         if (activeKeysRef.current.has(key)) {
           activeKeysRef.current.delete(key);
-          forceUpdate(); // 即座に再レンダリングを実行！
+          const isMovingNow = activeKeysRef.current.size > 0 || activeDirRef.current !== null;
+          setMyIsWalking(isMovingNow);
+          if (!isMovingNow) {
+            setMyFrame(0); // 完全にキーが離されたら即座に直立に戻す
+          }
         }
       }
     };
@@ -273,80 +283,80 @@ function AomitsuRoom({ db, userName, userIcon }) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [userName, userIcon, db]);
+  }, [userName, userIcon, db, myDirection]);
 
   // 1.8. 【他人の移動同期】 Firebaseの向き・歩行状態をリアルタイム同期
   useEffect(() => {
-    const newWalkingStates = { ...walkingStates };
-    let hasChanged = false;
+    const activeNames = Object.keys(players).filter(name => name.normalize('NFC') !== userName.normalize('NFC'));
 
-    Object.keys(players).forEach(name => {
-      // 自分以外のプレイヤーのみ同期歩行アニメの対象にする
-      if (name.normalize('NFC') === userName.normalize('NFC')) return;
-
+    activeNames.forEach(name => {
       const player = players[name];
       if (!player) return;
 
-      const isWalking = player.isWalking || false;
-      const direction = player.direction || 'down';
+      const isWalkingVal = player.isWalking || false;
+      const directionVal = player.direction || 'down';
 
-      // 以前のステートを取得
-      const currentState = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
-
-      // 向きや歩行状態が変わった場合のみステート更新
-      if (currentState.isWalking !== isWalking || currentState.direction !== direction) {
-        newWalkingStates[name] = {
-          isWalking: isWalking,
-          direction: direction,
-          frame: isWalking ? (currentState.frame || 0) : 0
-        };
-        hasChanged = true;
-
-        // 歩行中のコマ送りアニメーションタイマーの管理
-        if (isWalking) {
-          // すでにタイマーがあればクリア
-          if (walkTimersRef.current[name]) {
-            clearInterval(walkTimersRef.current[name]);
+      // 関数型ステート更新を徹底し、ESLint の render 内 ref アクセス / 同期 setState を100%回避！
+      setWalkingStates(prev => {
+        const currentState = prev[name] || { isWalking: false, direction: 'down', frame: 0 };
+        if (currentState.isWalking !== isWalkingVal || currentState.direction !== directionVal) {
+          // 歩行開始時のタイマー処理
+          if (isWalkingVal) {
+            if (walkTimersRef.current[name]) {
+              clearInterval(walkTimersRef.current[name]);
+            }
+            
+            let currentFrame = currentState.frame || 0;
+            walkTimersRef.current[name] = setInterval(() => {
+              currentFrame = (currentFrame + 1) % 4;
+              setWalkingStates(p => {
+                if (p[name] && p[name].isWalking) {
+                  return {
+                    ...p,
+                    [name]: { ...p[name], frame: currentFrame }
+                  };
+                }
+                return p;
+              });
+            }, 130);
+          } else {
+            // 静止した場合はタイマーを削除
+            if (walkTimersRef.current[name]) {
+              clearInterval(walkTimersRef.current[name]);
+              delete walkTimersRef.current[name];
+            }
           }
-          
-          let currentFrame = currentState.frame || 0;
-          walkTimersRef.current[name] = setInterval(() => {
-            currentFrame = (currentFrame + 1) % 4;
-            setWalkingStates(prev => {
-              if (prev[name] && prev[name].isWalking) {
-                return {
-                  ...prev,
-                  [name]: {
-                    ...prev[name],
-                    frame: currentFrame
-                  }
-                };
-              }
-              return prev;
-            });
-          }, 130);
-        } else {
-          // 静止した場合はタイマーを削除
-          if (walkTimersRef.current[name]) {
-            clearInterval(walkTimersRef.current[name]);
-            delete walkTimersRef.current[name];
-          }
+
+          return {
+            ...prev,
+            [name]: {
+              isWalking: isWalkingVal,
+              direction: directionVal,
+              frame: isWalkingVal ? (currentState.frame || 0) : 0
+            }
+          };
         }
+        return prev;
+      });
+    });
+
+    // プレイヤーリストからいなくなった人のタイマーをクリーンアップ
+    Object.keys(walkTimersRef.current).forEach(name => {
+      if (!activeNames.includes(name)) {
+        clearInterval(walkTimersRef.current[name]);
+        delete walkTimersRef.current[name];
       }
     });
 
-    if (hasChanged) {
-      setWalkingStates(newWalkingStates);
-    }
   }, [players, userName]);
 
   // アバタータイマーの完全クリーンアップ
   useEffect(() => {
+    const timers = walkTimersRef.current;
     return () => {
-      Object.keys(walkTimersRef.current).forEach(name => {
-        if (walkTimersRef.current[name]) {
-          clearInterval(walkTimersRef.current[name].interval);
-          clearTimeout(walkTimersRef.current[name].timeout);
+      Object.keys(timers).forEach(name => {
+        if (timers[name]) {
+          clearInterval(timers[name]);
         }
       });
     };
@@ -371,51 +381,34 @@ function AomitsuRoom({ db, userName, userIcon }) {
     };
   }, []);
 
+  // スマホ十字キー開始・終了のタップイベント
+  const handleDpadStart = (dir) => {
+    activeDirRef.current = dir;
+    setMyDirection(dir);
+    setMyIsWalking(true);
+    setMyFrame(1);
+  };
+
+  const handleDpadEnd = () => {
+    activeDirRef.current = null;
+    const isMovingNow = activeKeysRef.current.size > 0;
+    setMyIsWalking(isMovingNow);
+    if (!isMovingNow) {
+      setMyFrame(0);
+    }
+  };
+
   return (
     <div 
       className="aomitsu-room-container" 
       ref={roomRef}
     >
-      {/* チャットへ戻るフローティングボタン（ひろばの世界観を壊さないお洒落デザイン） */}
+      {/* チャットへ戻るフローティングボタン */}
       <a 
         href="/" 
         className="room-back-btn"
-        style={{
-          position: 'absolute',
-          top: '15px',
-          left: '15px',
-          zIndex: 100,
-          background: 'rgba(255, 255, 255, 0.9)',
-          backdropFilter: 'blur(4px)',
-          border: '2px solid #8e7f72',
-          borderRadius: '25px',
-          padding: '8px 16px',
-          color: '#3e322b',
-          textDecoration: 'none',
-          fontSize: '0.85rem',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontFamily: 'sans-serif',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          MozUserSelect: 'none',
-          msUserSelect: 'none'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.background = '#ffffff';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-        }}
       >
-        <span style={{ fontSize: '1rem' }}>←</span> LINEチャットに戻る
+        <span>←</span> LINEチャットに戻る
       </a>
 
       {/* PC用の操作案内ラベル */}
@@ -426,9 +419,19 @@ function AomitsuRoom({ db, userName, userIcon }) {
       {/* インテリアのラグ */}
       <div className="room-rug"></div>
 
+      {/* ネコジャンプ ゲーム機 (アーケード筐体) */}
+      <a 
+        href="/neko-jump/index.html?from=room" 
+        className="arcade-cabinet"
+        title="ネコジャンプで遊ぶ"
+      >
+        <span className="arcade-screen-text">NEKO JUMP</span>
+        <div className="arcade-cabinet-sprite">🎮</div>
+      </a>
+
       {/* ネコ神様 NPC */}
       <div className="neko-god-npc" onClick={handleGodClick}>
-        <img src="/icons/neko/default.png" alt="黒猫の神様" />
+        <img src="/icons/neko/default.png" alt="黒猫の神様" draggable="false" />
       </div>
 
       {/* 神様の吹き出し */}
@@ -441,10 +444,10 @@ function AomitsuRoom({ db, userName, userIcon }) {
       {/* 部屋の中にいるお友達アバターの描画 */}
       {Object.keys(players).map((name) => {
         const player = players[name];
-        if (!player) return null; // 安全対策: 読み込み途中でプレイヤーが存在しない場合は描画をスキップ
+        if (!player) return null;
 
         const isMe = name.normalize('NFC') === userName.normalize('NFC');
-        const currentUserIcon = player.userIcon || userIcon || 'girl1'; // アイコンの安全なフォールバック
+        const currentUserIcon = player.userIcon || userIcon || 'girl1';
         
         // 自分の位置は超低遅延ローカル座標、他人はFirebase同期座標を使用
         const posX = isMe ? myPos.x : (player.x !== undefined ? player.x : 50);
@@ -454,36 +457,26 @@ function AomitsuRoom({ db, userName, userIcon }) {
         const fallbackSrc = `/sprites/${currentUserIcon}-down-0.png`;
         
         // 歩行状態の取得
-        let isWalking = false;
-        let direction = 'down';
-        let frame = 0;
+        let isWalkingVal = false;
+        let directionVal = 'down';
+        let frameVal = 0;
 
         if (isMe) {
-          // 自分自身の場合は、Refから同期的に最新の入力状態を決定（Reactステートの遅延を100%回避）
-          const currentDir = myCurrentDirectionRef.current;
-          isWalking = currentDir !== null;
-
-          // 歩き始めた瞬間、直立(0)から即座に歩行コマ(1)に初期化する
-          if (isWalking && (animFrameRef.current === 0 || animFrameRef.current > 3)) {
-            animFrameRef.current = 1;
-          }
-
-          direction = currentDir || myLastDirectionRef.current || 'down';
-          // 歩いている間は 1 -> 2 -> 3 をループし、ボタンを離して止まった瞬間だけ 0 (直立)にする！
-          frame = isWalking ? animFrameRef.current : 0;
+          isWalkingVal = myIsWalking;
+          directionVal = myDirection;
+          frameVal = myIsWalking ? myFrame : 0;
         } else {
-          // 他人の場合は、Firebase同期スレッドで更新される walkingStates または Firebaseの最新値を使用
           const state = walkingStates[name] || { isWalking: false, direction: 'down', frame: 0 };
-          isWalking = player.isWalking !== undefined ? player.isWalking : state.isWalking;
-          direction = player.direction || state.direction || 'down';
-          frame = state.frame;
+          isWalkingVal = player.isWalking !== undefined ? player.isWalking : state.isWalking;
+          directionVal = player.direction || state.direction || 'down';
+          frameVal = state.frame;
         }
 
         let imgName = `${currentUserIcon}-down-0.png`;
-        if (isWalking) {
-          imgName = `${currentUserIcon}-${direction}-${frame}.png`;
+        if (isWalkingVal) {
+          imgName = `${currentUserIcon}-${directionVal}-${frameVal}.png`;
         } else {
-          imgName = `${currentUserIcon}-${direction}-0.png`;
+          imgName = `${currentUserIcon}-${directionVal}-0.png`;
         }
         
         const iconSrc = `/sprites/${imgName}`;
@@ -501,8 +494,8 @@ function AomitsuRoom({ db, userName, userIcon }) {
               src={iconSrc} 
               className="avatar-node-img" 
               alt={name}
+              draggable="false"
               onError={(e) => {
-                // 画像ファイル（歩行コマなど）が存在しない場合は、完全正面コマ0に自動フォールバック
                 if (e.target.src !== window.location.origin + fallbackSrc) {
                   e.target.src = fallbackSrc;
                 }
@@ -519,37 +512,37 @@ function AomitsuRoom({ db, userName, userIcon }) {
       <div className="room-virtual-dpad">
         <button 
           className="dpad-btn dpad-up" 
-          onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'up'; forceUpdate(); }} 
-          onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
-          onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'up'; forceUpdate(); }}
-          onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+          onTouchStart={(e) => { e.preventDefault(); handleDpadStart('up'); }} 
+          onTouchEnd={(e) => { e.preventDefault(); handleDpadEnd(); }}
+          onMouseDown={(e) => { e.preventDefault(); handleDpadStart('up'); }}
+          onMouseUp={(e) => { e.preventDefault(); handleDpadEnd(); }}
         >▲</button>
         <div className="dpad-row-middle">
           <button 
             className="dpad-btn dpad-left" 
-            onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'left'; forceUpdate(); }} 
-            onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
-            onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'left'; forceUpdate(); }}
-            onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+            onTouchStart={(e) => { e.preventDefault(); handleDpadStart('left'); }} 
+            onTouchEnd={(e) => { e.preventDefault(); handleDpadEnd(); }}
+            onMouseDown={(e) => { e.preventDefault(); handleDpadStart('left'); }}
+            onMouseUp={(e) => { e.preventDefault(); handleDpadEnd(); }}
           >◀</button>
           <div className="dpad-center-hub"></div>
           <button 
             className="dpad-btn dpad-right" 
-            onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'right'; forceUpdate(); }} 
-            onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
-            onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'right'; forceUpdate(); }}
-            onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+            onTouchStart={(e) => { e.preventDefault(); handleDpadStart('right'); }} 
+            onTouchEnd={(e) => { e.preventDefault(); handleDpadEnd(); }}
+            onMouseDown={(e) => { e.preventDefault(); handleDpadStart('right'); }}
+            onMouseUp={(e) => { e.preventDefault(); handleDpadEnd(); }}
           >▶</button>
         </div>
         <button 
           className="dpad-btn dpad-down" 
-          onTouchStart={(e) => { e.preventDefault(); activeDirRef.current = 'down'; forceUpdate(); }} 
-          onTouchEnd={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
-          onMouseDown={(e) => { e.preventDefault(); activeDirRef.current = 'down'; forceUpdate(); }}
-          onMouseUp={(e) => { e.preventDefault(); activeDirRef.current = null; forceUpdate(); }}
+          onTouchStart={(e) => { e.preventDefault(); handleDpadStart('down'); }} 
+          onTouchEnd={(e) => { e.preventDefault(); handleDpadEnd(); }}
+          onMouseDown={(e) => { e.preventDefault(); handleDpadStart('down'); }}
+          onMouseUp={(e) => { e.preventDefault(); handleDpadEnd(); }}
         >▼</button>
       </div>
-      {/* 全アバター画像のプリロード（チラつき・一瞬消える現象を100%防止する最強の仕組み） */}
+      {/* 全アバター画像のプリロード */}
       <div style={{ display: 'none' }}>
         {['down', 'up', 'left', 'right'].map(dir => 
           [0, 1, 2, 3].map(f => (

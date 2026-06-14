@@ -675,6 +675,33 @@ function App() {
               <span style={{ fontWeight: 'bold', color: '#555' }}>新聞をつくる</span>
             </a>
 
+            <a href="/neko-jump/index.html?from=chat" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: '#333',
+              fontSize: '0.8rem',
+              gap: '6px',
+              cursor: 'pointer'
+            }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                borderRadius: '16px',
+                backgroundColor: '#ede7f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                transition: 'transform 0.1s'
+              }}>
+                🎮
+              </div>
+              <span style={{ fontWeight: 'bold', color: '#555' }}>ゲームで遊ぶ</span>
+            </a>
+
             <button 
               type="button" 
               onClick={handleLeave} 

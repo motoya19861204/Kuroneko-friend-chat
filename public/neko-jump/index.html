@@ -1,0 +1,2783 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>キャットジャンプ — 黒猫の空中大冒険</title>
+<style>
+:root {
+  --bg: #0d0f1d;
+  --panel: rgba(20, 24, 46, 0.85);
+  --accent: #bd34eb;
+  --accent-light: #f07dfa;
+  --text: #e2e8f0;
+}
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  overflow: hidden;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+}
+#gameWrap {
+  max-width: 480px;
+  height: 100vh;
+  margin: 0 auto;
+  background: radial-gradient(circle at center, #1b1633 0%, #080712 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,0.8);
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  z-index: 10;
+  background: linear-gradient(180deg, rgba(13,15,29,0.9) 0%, rgba(13,15,29,0) 100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.score-box {
+  display: flex;
+  flex-direction: column;
+}
+.score-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #a0aec0;
+}
+.score-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(240, 125, 250, 0.5);
+}
+.high-score {
+  font-size: 12px;
+  color: #a0aec0;
+  text-align: right;
+}
+#canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* クリーンで分かりやすい元の位置のコンボインジケーター */
+#comboIndicator {
+  position: absolute;
+  top: 90px;
+  left: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  background: rgba(13, 15, 29, 0.6);
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  align-items: center;
+}
+.combo-slot {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.combo-slot.active {
+  background: rgba(189, 52, 235, 0.3);
+  border-color: var(--accent-light);
+  box-shadow: 0 0 8px var(--accent-light);
+}
+
+#startScreen {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 7, 18, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  padding: 30px;
+  text-align: center;
+}
+.game-title {
+  font-size: 42px;
+  font-weight: 900;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #f07dfa, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  letter-spacing: 1px;
+}
+.game-subtitle {
+  font-size: 14px;
+  color: #a0aec0;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+#startBtn {
+  padding: 16px 36px;
+  font-size: 20px;
+  font-weight: 800;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(189, 52, 235, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+#startBtn:active {
+  transform: scale(0.95);
+  box-shadow: 0 5px 15px rgba(189, 52, 235, 0.4);
+}
+.instructions {
+  margin-top: 30px;
+  font-size: 13px;
+  color: #718096;
+  line-height: 1.5;
+}
+.overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 7, 18, 0.85);
+  backdrop-filter: blur(6px);
+  z-index: 30;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 30px 24px;
+  border-radius: 24px;
+  text-align: center;
+  width: 85%;
+  max-width: 360px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+.panel-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ff5e7e;
+  margin-bottom: 20px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 16px;
+}
+.retry-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: 800;
+  border-radius: 50px;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+  margin-top: 24px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+.hidden {
+  display: none !important;
+}
+/* 会話ウィンドウのCSS定義 */
+#dialogueWrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  min-height: 140px;
+  background: rgba(13, 15, 29, 0.95);
+  border-top: 3px solid var(--accent);
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  z-index: 15;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+}
+#dialogueFace {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  background: #1a1b35;
+  border: 3px solid var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(189, 52, 235, 0.3);
+  overflow: hidden;
+}
+#dialogueFaceImg {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+#dialogueContent {
+  flex-grow: 1;
+}
+#dialogueName {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--accent-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+#dialogueText {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.32;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.75);
+}
+#dialogueWrap.dialogue-effect {
+  justify-content: center;
+  text-align: center;
+  border-top-color: #ffd166;
+  background: rgba(10, 8, 20, 0.78);
+}
+#dialogueWrap.dialogue-effect #dialogueFace,
+#dialogueWrap.dialogue-effect #dialogueName {
+  display: none;
+}
+#dialogueWrap.dialogue-effect #dialogueText {
+  font-size: 26px;
+  font-weight: 1000;
+  letter-spacing: 1px;
+  color: #fff1a6;
+  text-shadow: 0 0 10px #ff9f1c, 0 3px 0 #6b1d8f, 0 8px 18px rgba(0,0,0,0.9);
+}
+#dialogueWrap.dialogue-shout #dialogueText {
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 0 0 14px #f07dfa, 0 4px 0 #7b1fa2, 0 8px 18px rgba(0,0,0,0.9);
+}
+
+/* ボス警告演出用の赤色警告オーバーレイ */
+#bossWarningOverlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 0, 0, 0.15);
+  z-index: 12;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: warningFlash 0.5s infinite alternate;
+}
+.warning-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #ff3b30;
+  text-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 0 0 3px #000;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+}
+.warning-sub {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff9500;
+  text-shadow: 0 0 8px rgba(255, 149, 0, 0.8), 0 0 3px #000;
+  letter-spacing: 2px;
+}
+
+@keyframes warningFlash {
+  0% { opacity: 0.1; }
+  100% { opacity: 1.0; }
+}
+
+#cutinOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: radial-gradient(circle, rgba(255,255,255,0.2), rgba(189,52,235,0.18) 35%, rgba(0,0,0,0.1) 70%);
+  animation: cutinFlash 0.18s alternate infinite;
+}
+.cutin-title {
+  font-size: 42px;
+  font-weight: 1000;
+  color: #fff;
+  letter-spacing: 2px;
+  transform: skew(-8deg) rotate(-3deg);
+  text-shadow: 0 0 8px #fff, 0 0 18px #ff2bd6, 0 5px 0 #4c0f70, 0 12px 24px rgba(0,0,0,0.75);
+}
+.cutin-sub {
+  margin-top: 10px;
+  padding: 6px 16px;
+  font-size: 20px;
+  font-weight: 1000;
+  color: #1a1030;
+  background: linear-gradient(90deg, #fff1a6, #ff9f1c, #fff1a6);
+  border: 3px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 0 18px rgba(255,209,102,0.8);
+}
+#cutinOverlay.victory {
+  background: radial-gradient(circle, rgba(255,241,166,0.32), rgba(240,125,250,0.18) 42%, rgba(0,0,0,0.08) 72%);
+}
+#cutinOverlay.victory .cutin-title {
+  color: #fff7c7;
+  text-shadow: 0 0 10px #fff, 0 0 22px #ffd166, 0 5px 0 #8a3c00, 0 12px 24px rgba(0,0,0,0.75);
+}
+#whiteFadeOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+@keyframes cutinFlash {
+  from { filter: brightness(1); transform: scale(0.98); }
+  to { filter: brightness(1.28); transform: scale(1.02); }
+}
+
+/* あおみつに戻るボタンの追加スタイル */
+.aomitsu-back-btn {
+  margin-top: 14px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+  width: auto;
+  min-width: 160px;
+  text-align: center;
+}
+
+.aomitsu-back-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.aomitsu-back-btn:active {
+  transform: translateY(0);
+}
+
+/* リザルト画面内の戻るボタンは他のボタンと統一感を持たせる */
+#resultBackBtn {
+  background: rgba(189, 52, 235, 0.2);
+  border: 1px solid var(--accent);
+}
+#resultBackBtn:hover {
+  background: rgba(189, 52, 235, 0.4);
+}
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <header>
+    <div class="score-box">
+      <span class="score-label">HEIGHT</span>
+      <span class="score-value" id="score">0m</span>
+    </div>
+    <div class="high-score">
+      BEST: <span id="high">0m</span>
+    </div>
+  </header>
+
+  <!-- シンプルで明快な元の位置のコンボインジケーター（アイコンをシンプルに表示） -->
+  <div id="comboIndicator">
+    <div class="combo-slot" id="slot0">⚫</div>
+    <div class="combo-slot" id="slot1">⚫</div>
+    <div class="combo-slot" id="slot2">⚫</div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- ボス警報画面 -->
+  <div id="bossWarningOverlay" class="hidden">
+    <div class="warning-title">WARNING</div>
+    <div class="warning-sub">BOSS APPROACHING</div>
+  </div>
+
+  <div id="cutinOverlay" class="hidden">
+    <div class="cutin-title" id="cutinTitle"></div>
+    <div class="cutin-sub" id="cutinSub"></div>
+  </div>
+  <div id="whiteFadeOverlay" class="hidden"></div>
+
+  <!-- 会話ウィンドウ -->
+  <div id="dialogueWrap" class="hidden">
+    <div id="dialogueFace">
+      <img id="dialogueFaceImg" src="cat-run-0.png" alt="cat" />
+    </div>
+    <div id="dialogueContent">
+      <div id="dialogueName">クロネコ</div>
+      <div id="dialogueText"></div>
+    </div>
+  </div>
+
+  <!-- スタート画面 -->
+  <div id="startScreen">
+    <h1 class="game-title">CAT JUMP</h1>
+    <div class="game-subtitle">壁を駆け上がる黒猫の爽快大冒険！<br>障害物を飛び越え、空中攻撃でコンボを決めろ！</div>
+    <button id="startBtn">スタート</button>
+    <button id="backBtn" class="aomitsu-back-btn">あおみつに戻る</button>
+    <div class="instructions">
+      【操作方法】<br>
+      画面をタップする（またはスペースキーを押す）と逆の壁へジャンプします。<br>
+      ジャンプ中の接触で空中を飛ぶ敵を「ひっかき」撃破！<br>
+      同じ敵を3回連続で倒すと無敵の「キャットダッシュ」発動！
+    </div>
+  </div>
+
+  <!-- リザルト画面 -->
+  <div id="overlay" class="overlay hidden">
+    <div class="panel">
+      <div class="panel-title">GAME OVER</div>
+      <div class="stat-row">
+        <span>到達高度</span>
+        <span style="font-weight:700" id="resultScore">0m</span>
+      </div>
+      <div class="stat-row">
+        <span>自己ベスト</span>
+        <span id="resultHigh">0m</span>
+      </div>
+      <button class="retry-btn" id="retryBtn">もう一度プレイ</button>
+      <button class="retry-btn aomitsu-back-btn" id="resultBackBtn">あおみつに戻る</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// あおみつチャット・ひろばへ戻る処理
+const urlParams = new URLSearchParams(window.location.search);
+const fromSource = urlParams.get('from') || 'chat';
+let backUrl = '/'; // デフォルトはチャット
+if (fromSource === 'room') {
+  backUrl = '/room.html';
+}
+
+const handleBackToAomitsu = () => {
+  try {
+    bgm.pause();
+    bossBgm.pause();
+    bossIntroBgm.pause();
+  } catch (e) {}
+  window.location.href = backUrl;
+};
+
+// ----------------- 音響 & パス設定 -----------------
+const BGM_PATH = '通常BGM.mp3';
+const GAMEOVER_SOUND_PATH = 'gameover.mp3';
+const STORAGE_KEY = 'cat_jump_highscore';
+const BOSS_TRIGGER_SCORE = 5000; // ボス出現高度
+const BOSS_BIRD_COLS = 5;
+const BOSS_BIRD_ROWS = 2;
+const BOSS_BIRD_FRAMES = BOSS_BIRD_COLS * BOSS_BIRD_ROWS;
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const highEl = document.getElementById('high');
+const startScreen = document.getElementById('startScreen');
+const startBtn = document.getElementById('startBtn');
+const overlay = document.getElementById('overlay');
+const resultScore = document.getElementById('resultScore');
+const resultHigh = document.getElementById('resultHigh');
+const retryBtn = document.getElementById('retryBtn');
+
+const slot0 = document.getElementById('slot0');
+const slot1 = document.getElementById('slot1');
+const slot2 = document.getElementById('slot2');
+
+const dialogueTextEl = document.getElementById('dialogueText');
+const bossWarningOverlay = document.getElementById('bossWarningOverlay');
+const dialogueWrap = document.getElementById('dialogueWrap');
+const dialogueFace = document.getElementById('dialogueFace');
+const dialogueNameEl = document.getElementById('dialogueName');
+const dialogueFaceImg = document.getElementById('dialogueFaceImg');
+const cutinOverlay = document.getElementById('cutinOverlay');
+const cutinTitle = document.getElementById('cutinTitle');
+const cutinSub = document.getElementById('cutinSub');
+const whiteFadeOverlay = document.getElementById('whiteFadeOverlay');
+
+// あおみつへ戻るボタンのイベントハンドラー登録
+const backBtn = document.getElementById('backBtn');
+if (backBtn) backBtn.addEventListener('click', handleBackToAomitsu);
+const resultBackBtn = document.getElementById('resultBackBtn');
+if (resultBackBtn) resultBackBtn.addEventListener('click', handleBackToAomitsu);
+
+let W = 480, H = 640;
+let running = false;
+let starting = false;
+let rafId = 0;
+let lastTime = 0;
+let score = 0.0; // 浮動小数点数に設定（切り捨てによるバグを防ぐ）
+let highScore = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10) || 0;
+highEl.textContent = highScore + 'm';
+
+// オーディオ
+const bgm = new Audio(BGM_PATH);
+bgm.loop = true;
+const bossIntroBgm = new Audio('ボス登場.mp3');
+bossIntroBgm.loop = false; // ボス登場はループしない
+const bossBgm = new Audio('ボス戦.mp3');
+bossBgm.loop = true;
+const gameoverSound = new Audio(GAMEOVER_SOUND_PATH);
+
+// ドラクエ風会話ウィンドウ状態管理
+let dialogueState = {
+  active: false,
+  text: "",
+  currentText: "",
+  charIndex: 0,
+  timer: 0,
+  speed: 0.04, // 1文字あたり0.04秒
+  callback: null,
+  face: "face/Neko-up.jpg",
+  waitingInput: false,
+  mode: ""
+};
+
+// パターンキャッシュ（レンガの描画パターンを毎フレーム生成しないようにキャッシュします）
+let brickPattern = null;
+
+// ゲーム開始前イベント状態
+let gameStartEventActive = false;
+
+// DOM更新軽量化用のスコアキャッシュ変数
+let lastScoreVal = -1;
+
+// ボス状態オブジェクト
+let bossTriggered = false;
+let boss = {
+  active: false,
+  state: 'none', // 'none', 'intro', 'fight', 'defeat'
+  x: 240,
+  y: -150,
+  targetY: 140, // 降臨の目標位置
+  w: 240,
+  h: 240,
+  hp: 3,
+  maxHp: 3,
+  defeatedCount: 0, // 難易度上昇に利用
+  timer: 0,
+  spawnTimer: 0,
+  animFrame: 0,
+  animTimer: 0,
+  side: 1,
+  hurtTimer: 0, // 被弾時の赤点滅＆ブレ演出用
+  defeatPhase: 'none'
+};
+
+// Web Audio APIによる地響き＆サイレン合成シンセサイザー
+class BossIntroSynthesizer {
+  constructor() {
+    this.ctx = null;
+    this.noiseNode = null;
+    this.filterNode = null;
+    this.sirenOsc = null;
+    this.sirenGain = null;
+    this.lfo = null;
+    this.masterGain = null;
+    this.rumbleLFO = null;
+  }
+
+  start() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioContextClass();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+      this.masterGain.gain.linearRampToValueAtTime(0.8, this.ctx.currentTime + 1.0);
+      this.masterGain.connect(this.ctx.destination);
+
+      // --- 1. 地響き（ゴゴゴ…）の生成 ---
+      const bufferSize = this.ctx.sampleRate * 2;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      
+      this.noiseNode = this.ctx.createBufferSource();
+      this.noiseNode.buffer = noiseBuffer;
+      this.noiseNode.loop = true;
+
+      this.filterNode = this.ctx.createBiquadFilter();
+      this.filterNode.type = 'lowpass';
+      this.filterNode.frequency.setValueAtTime(70, this.ctx.currentTime);
+      this.filterNode.Q.setValueAtTime(6, this.ctx.currentTime);
+
+      this.rumbleLFO = this.ctx.createOscillator();
+      this.rumbleLFO.frequency.setValueAtTime(2.0, this.ctx.currentTime);
+      const rumbleLFOGain = this.ctx.createGain();
+      rumbleLFOGain.gain.setValueAtTime(25, this.ctx.currentTime);
+
+      this.rumbleLFO.connect(rumbleLFOGain);
+      rumbleLFOGain.connect(this.filterNode.frequency);
+      
+      const rumbleGain = this.ctx.createGain();
+      rumbleGain.gain.setValueAtTime(1.5, this.ctx.currentTime);
+
+      this.noiseNode.connect(this.filterNode);
+      this.filterNode.connect(rumbleGain);
+      rumbleGain.connect(this.masterGain);
+
+      this.rumbleLFO.start();
+      this.noiseNode.start();
+
+      // --- 2. 警告サイレンの生成 ---
+      this.sirenOsc = this.ctx.createOscillator();
+      this.sirenOsc.type = 'sawtooth';
+      this.sirenOsc.frequency.setValueAtTime(380, this.ctx.currentTime);
+
+      const sirenFilter = this.ctx.createBiquadFilter();
+      sirenFilter.type = 'lowpass';
+      sirenFilter.frequency.setValueAtTime(750, this.ctx.currentTime);
+
+      this.sirenGain = this.ctx.createGain();
+      this.sirenGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+
+      this.lfo = this.ctx.createOscillator();
+      this.lfo.frequency.setValueAtTime(0.8, this.ctx.currentTime);
+      const lfoGain = this.ctx.createGain();
+      lfoGain.gain.setValueAtTime(120, this.ctx.currentTime);
+
+      this.lfo.connect(lfoGain);
+      lfoGain.connect(this.sirenOsc.frequency);
+
+      this.sirenOsc.connect(sirenFilter);
+      sirenFilter.connect(this.sirenGain);
+      this.sirenGain.connect(this.masterGain);
+
+      this.lfo.start();
+      this.sirenOsc.start();
+
+    } catch (e) {
+      console.warn("Web Audio API blocked or not supported", e);
+    }
+  }
+
+  stop() {
+    try {
+      if (this.ctx) {
+        this.masterGain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + 0.5);
+        const activeCtx = this.ctx;
+        this.ctx = null;
+        setTimeout(() => {
+          try {
+            activeCtx.close();
+          } catch(e){}
+        }, 600);
+      }
+    } catch(e) {}
+  }
+}
+const bossIntroSynth = new BossIntroSynthesizer();
+
+let cutinTimerId = 0;
+
+function applyDialogueMode(mode = "") {
+  if (!dialogueWrap) return;
+  dialogueWrap.classList.remove('dialogue-effect', 'dialogue-shout');
+  if (mode === 'effect') dialogueWrap.classList.add('dialogue-effect');
+  if (mode === 'shout') dialogueWrap.classList.add('dialogue-shout');
+}
+
+function hideDialogue() {
+  dialogueState.active = false;
+  dialogueState.waitingInput = false;
+  dialogueState.currentText = "";
+  dialogueState.text = "";
+  if (dialogueTextEl) dialogueTextEl.textContent = "";
+  if (dialogueWrap) dialogueWrap.classList.add('hidden');
+}
+
+function setDialogueDOM(text, facePath, options = {}) {
+  const mode = options.mode || "";
+  applyDialogueMode(mode);
+  if (dialogueWrap) dialogueWrap.classList.remove('hidden');
+  if (dialogueTextEl) {
+    dialogueTextEl.textContent = text;
+  }
+  if (dialogueNameEl) {
+    dialogueNameEl.textContent = options.name || "クロネコ";
+  }
+  if (dialogueFace) {
+    dialogueFace.classList.toggle('hidden', mode === 'effect' || options.hideFace === true);
+  }
+  if (dialogueFaceImg && facePath) {
+    dialogueFaceImg.src = facePath;
+  }
+}
+
+function showEffectText(text, duration = 900, mode = 'effect') {
+  setDialogueDOM(text, null, { mode, hideFace: true, name: "" });
+  if (duration > 0) {
+    setTimeout(() => {
+      if (!dialogueState.active) hideDialogue();
+    }, duration);
+  }
+}
+
+function showCutin(title, sub = "", duration = 1200, variant = "") {
+  if (!cutinOverlay) return;
+  if (cutinTimerId) clearTimeout(cutinTimerId);
+  cutinOverlay.className = variant ? variant : "";
+  cutinOverlay.classList.remove('hidden');
+  if (cutinTitle) cutinTitle.textContent = title;
+  if (cutinSub) cutinSub.textContent = sub;
+  cutinTimerId = setTimeout(() => {
+    cutinOverlay.classList.add('hidden');
+  }, duration);
+}
+
+function setWhiteFade(visible, duration = 900) {
+  if (!whiteFadeOverlay) return;
+  whiteFadeOverlay.style.transition = `opacity ${duration}ms ease`;
+  whiteFadeOverlay.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    whiteFadeOverlay.style.opacity = visible ? '1' : '0';
+  });
+  if (!visible) {
+    setTimeout(() => {
+      if (whiteFadeOverlay.style.opacity === '0') {
+        whiteFadeOverlay.classList.add('hidden');
+      }
+    }, duration + 80);
+  }
+}
+
+function showAutoDialogue(text, face, duration = 1400, options = {}, callback = null) {
+  dialogueState.active = false;
+  dialogueState.waitingInput = false;
+  setDialogueDOM(text, face, options);
+  setTimeout(() => {
+    hideDialogue();
+    if (callback) callback();
+  }, duration);
+}
+
+function startDialogue(text, face, callback, options = {}) {
+  dialogueState.active = true;
+  dialogueState.text = text;
+  dialogueState.currentText = "";
+  dialogueState.charIndex = 0;
+  dialogueState.timer = 0;
+  dialogueState.face = face || "face/Neko-up.jpg";
+  dialogueState.callback = callback || null;
+  dialogueState.waitingInput = false;
+  dialogueState.mode = options.mode || "";
+  
+  setDialogueDOM("", dialogueState.face, options);
+}
+
+function advanceDialogue() {
+  if (!dialogueState.active) return false;
+
+  if (dialogueState.charIndex < dialogueState.text.length) {
+    dialogueState.charIndex = dialogueState.text.length;
+    dialogueState.currentText = dialogueState.text;
+    dialogueState.waitingInput = true;
+    setDialogueDOM(dialogueState.currentText + " ▼", dialogueState.face, { mode: dialogueState.mode });
+    return true;
+  }
+
+  if (dialogueState.waitingInput) {
+    dialogueState.active = false;
+    dialogueState.waitingInput = false;
+    hideDialogue();
+    
+    if (dialogueState.callback) {
+      const cb = dialogueState.callback;
+      dialogueState.callback = null;
+      cb();
+    }
+    return true;
+  }
+  return false;
+}
+
+function updateDialogue(dt) {
+  if (!dialogueState.active) return;
+
+  if (dialogueState.charIndex < dialogueState.text.length) {
+    dialogueState.timer += dt;
+    if (dialogueState.timer >= dialogueState.speed) {
+      dialogueState.timer = 0;
+      dialogueState.charIndex++;
+      dialogueState.currentText = dialogueState.text.slice(0, dialogueState.charIndex);
+      setDialogueDOM(dialogueState.currentText, dialogueState.face, { mode: dialogueState.mode });
+    }
+  } else {
+    dialogueState.waitingInput = true;
+    setDialogueDOM(dialogueState.currentText + " ▼", dialogueState.face, { mode: dialogueState.mode });
+  }
+}
+
+// ----------------- 音響 ＆ 効果音マネージャー (SE) -----------------
+class SoundManager {
+  constructor() {
+    this.poolSize = 4;
+    this.pools = {};
+    this.poolIndices = {};
+    this.unlocked = false;
+    this.unlockPromise = Promise.resolve();
+    this.audioContext = null;
+    this.buffers = {};
+    this.arrayBuffers = {};
+    this.arrayBufferPromises = {};
+    this.useWebAudio = !!(window.AudioContext || window.webkitAudioContext);
+    
+    this.soundSources = {
+      jump: '「とう！」.mp3',
+      hit: '剣で斬る2.mp3',
+      dash: 'ビーム砲チャージ.mp3',
+      hurt: '「ぐああーーっ！」.mp3',
+      fanfare: 'ファンファーレ.mp3'
+    };
+    
+    Object.keys(this.soundSources).forEach(key => {
+      if (this.useWebAudio) {
+        this.arrayBufferPromises[key] = this.fetchSoundData(key);
+      }
+      this.pools[key] = [];
+      this.poolIndices[key] = 0;
+      for (let i = 0; i < this.poolSize; i++) {
+        const audio = new Audio(this.soundSources[key]);
+        audio.preload = 'auto';
+        audio._playToken = 0;
+        audio._stopTimer = 0;
+        audio._fadeTimer = 0;
+        audio.load();
+        this.pools[key].push(audio);
+      }
+    });
+  }
+
+  fetchSoundData(key) {
+    if (!window.fetch) return Promise.resolve(null);
+    return fetch(this.soundSources[key])
+      .then(response => {
+        if (!response.ok) throw new Error(`SE load failed: ${key}`);
+        return response.arrayBuffer();
+      })
+      .then(buffer => {
+        this.arrayBuffers[key] = buffer;
+        return buffer;
+      })
+      .catch(() => null);
+  }
+
+  async unlockWebAudio() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return false;
+    if (!this.audioContext) {
+      this.audioContext = new AudioContextClass();
+    }
+    if (this.audioContext.state === 'suspended') {
+      await Promise.race([
+        this.audioContext.resume().catch(() => {}),
+        new Promise(resolve => setTimeout(resolve, 120))
+      ]);
+    }
+
+    try {
+      const silent = this.audioContext.createBuffer(1, 1, this.audioContext.sampleRate);
+      const source = this.audioContext.createBufferSource();
+      source.buffer = silent;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch(e) {}
+
+    await Promise.all(Object.keys(this.soundSources).map(key => this.decodeSound(key)));
+    return true;
+  }
+
+  async decodeSound(key) {
+    if (this.buffers[key] || !this.audioContext) return this.buffers[key] || null;
+    const loaded = await (this.arrayBufferPromises[key] || Promise.resolve(null));
+    const sourceBuffer = loaded || this.arrayBuffers[key];
+    if (!sourceBuffer) return null;
+    try {
+      const decoded = await this.audioContext.decodeAudioData(sourceBuffer.slice(0));
+      this.buffers[key] = decoded;
+      return decoded;
+    } catch(e) {
+      return null;
+    }
+  }
+
+  // モバイル対応（ユーザー操作時にWeb Audioを解錠し、短いSEを事前decode）
+  init() {
+    if (this.unlocked) return;
+    this.unlocked = true;
+    if (this.useWebAudio) {
+      this.unlockPromise = Promise.race([
+        this.unlockWebAudio(),
+        new Promise(resolve => setTimeout(resolve, 600))
+      ]);
+      return;
+    }
+
+    try {
+      Object.keys(this.pools).forEach(key => {
+        const audio = this.pools[key][0];
+        if (!audio) return;
+        audio._playToken = (audio._playToken || 0) + 1;
+        const unlockToken = audio._playToken;
+        const prevMuted = audio.muted;
+        const prevVolume = audio.volume;
+        audio.muted = true;
+        audio.volume = 0;
+        const restore = () => {
+          if (audio._playToken !== unlockToken) return;
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = prevMuted;
+          audio.volume = prevVolume;
+        };
+        const p = audio.play();
+        if (p !== undefined) {
+          p.then(restore).catch(restore);
+        } else {
+          restore();
+        }
+      });
+    } catch(e) {}
+  }
+
+  waitForUnlock() {
+    return this.unlockPromise;
+  }
+
+  playWebAudio(key, volume, speed, duration) {
+    const buffer = this.buffers[key];
+    const ctxAudio = this.audioContext;
+    if (!buffer || !ctxAudio) return true;
+
+    const source = ctxAudio.createBufferSource();
+    const gain = ctxAudio.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = speed;
+    gain.gain.setValueAtTime(volume, ctxAudio.currentTime);
+    source.connect(gain);
+    gain.connect(ctxAudio.destination);
+    source.start();
+
+    if (duration !== null) {
+      const stopAt = ctxAudio.currentTime + duration;
+      gain.gain.setValueAtTime(volume, ctxAudio.currentTime);
+      gain.gain.linearRampToValueAtTime(volume * 0.3, stopAt);
+      source.stop(stopAt + 0.03);
+    }
+    return true;
+  }
+
+  play(key, volume = 0.5, speed = 1.0, duration = null) {
+    try {
+      if (this.useWebAudio && this.audioContext) {
+        const handled = this.playWebAudio(key, volume, speed, duration);
+        if (handled) return;
+      }
+      const pool = this.pools[key];
+      if (pool) {
+        // プール内のAudioオブジェクトを順番にローテーションして再利用（GC負荷をゼロにします）
+        const idx = this.poolIndices[key];
+        const audio = pool[idx];
+        this.poolIndices[key] = (idx + 1) % this.poolSize;
+        audio._playToken = (audio._playToken || 0) + 1;
+        const playToken = audio._playToken;
+        if (audio._stopTimer) clearTimeout(audio._stopTimer);
+        if (audio._fadeTimer) clearTimeout(audio._fadeTimer);
+        
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch(e){}
+        
+        audio.muted = false;
+        audio.volume = volume;
+        audio.playbackRate = speed;
+        
+        const p = audio.play();
+        if (p !== undefined) {
+          p.catch(e => console.log("SE play blocked:", e));
+        }
+
+        // 指定秒数経過後に音をカット
+        if (duration !== null) {
+          audio._stopTimer = setTimeout(() => {
+            if (audio._playToken !== playToken) return;
+            try {
+              // 音声カット時のノイズを防ぐため、一瞬音量を下げてフェードアウト停止
+              audio.volume = volume * 0.3;
+              audio._fadeTimer = setTimeout(() => {
+                if (audio._playToken !== playToken) return;
+                audio.pause();
+                audio.currentTime = 0;
+                audio.volume = volume;
+              }, 25);
+            } catch(e) {}
+          }, duration * 1000);
+        }
+      }
+    } catch(e) {
+      console.warn("SE play error:", e);
+    }
+  }
+
+  getDurationMs(key, fallback = 1600) {
+    const buffer = this.buffers[key];
+    if (buffer && Number.isFinite(buffer.duration)) {
+      return Math.max(400, buffer.duration * 1000);
+    }
+    const audio = this.pools[key] && this.pools[key][0];
+    if (audio && Number.isFinite(audio.duration) && audio.duration > 0) {
+      return Math.max(400, audio.duration * 1000);
+    }
+    return fallback;
+  }
+
+  // 猫のジャンプ掛け声（切れ味鋭い「にゃっ！」と「ピョッ！」）
+  playJump() {
+    this.play('jump', 0.7, 1.0, 0.42);
+  }
+
+  // ひっかき撃破音（スパッと鋭い「シャキッ！」）
+  playHit() {
+    this.play('hit', 0.7, 1.0, 0.32);
+  }
+
+  // 必殺技発動音
+  playDashStart() {
+    this.play('dash', 0.85, 1.0, 1.15);
+  }
+
+  playHurt() {
+    this.play('hurt', 0.85, 1.0, 1.2);
+  }
+
+  playFanfare() {
+    this.play('fanfare', 0.9, 1.0, null);
+    return this.getDurationMs('fanfare', 2600);
+  }
+
+  playDashLoop(duration) {
+  }
+}
+const se = new SoundManager();
+
+
+
+// ----------------- アセットプリロード -----------------
+const ASSETS_TO_LOAD = {
+  crow0: 'crow-0.png',
+  crow1: 'crow-1.png',
+  rat: 'rat.png',
+  yarn: 'yarn.png',
+  collar: 'collar.png',
+  shield: 'shield.png',
+  brick: 'brick-wall.png',
+  bossBird: 'boss-bird-transparent.png'
+};
+
+const CAT_RUN_PATHS = [
+  'cat-run-0.png',
+  'cat-run-1.png',
+  'cat-run-2.png',
+  'cat-run-3.png'
+];
+
+const SPECIAL_FLIGHT_PATHS = [
+  'special_flight-1.png',
+  'special_flight-2.png',
+  'special_flight-3.png',
+  'special_flight-4.png',
+  'special_flight-5.png',
+  'special_flight-6.png',
+  'special_flight-7.png',
+  'special_flight-8.png',
+  'special_flight-9.png',
+  'special_flight-10.png'
+];
+
+const BALLOON_SPECIAL_PATHS = [
+  'balloon_special-1.png',
+  'balloon_special-2.png',
+  'balloon_special-3.png',
+  'balloon_special-4.png',
+  'balloon_special-5.png',
+  'balloon_special-6.png',
+  'balloon_special-7.png',
+  'balloon_special-8.png',
+  'balloon_special-9.png',
+  'balloon_special-10.png'
+];
+
+const FURBALL_SPECIAL_PATHS = [
+  'furball_special-1.png',
+  'furball_special-2.png',
+  'furball_special-3.png',
+  'furball_special-4.png',
+  'furball_special-5.png',
+  'furball_special-6.png',
+  'furball_special-7.png',
+  'furball_special-8.png',
+  'furball_special-9.png',
+  'furball_special-10.png'
+];
+
+let catRunImgs = [];
+let specialFlightImgs = [];
+let balloonSpecialImgs = [];
+let furballSpecialImgs = [];
+let gameAssets = {};
+let totalAssetsToLoad = Object.keys(ASSETS_TO_LOAD).length + CAT_RUN_PATHS.length + SPECIAL_FLIGHT_PATHS.length + BALLOON_SPECIAL_PATHS.length + FURBALL_SPECIAL_PATHS.length;
+let loadedAssetsCount = 0;
+let assetsReady = false;
+let resolveAssetsReady;
+const assetsReadyPromise = new Promise(resolve => {
+  resolveAssetsReady = resolve;
+});
+
+
+function setupPatterns() {
+  if (gameAssets.brick) {
+    brickPattern = ctx.createPattern(gameAssets.brick, 'repeat');
+  }
+}
+
+function onAssetLoaded() {
+  loadedAssetsCount++;
+  if (!assetsReady && loadedAssetsCount >= totalAssetsToLoad) {
+    assetsReady = true;
+    setupPatterns();
+    if (resolveAssetsReady) resolveAssetsReady();
+  }
+}
+
+function completeImageLoad(img, assign) {
+  const complete = () => {
+    assign(img);
+    onAssetLoaded();
+  };
+  if (img.decode) {
+    img.decode().then(complete).catch(complete);
+  } else {
+    complete();
+  }
+}
+
+CAT_RUN_PATHS.forEach((path, idx) => {
+  let img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    completeImageLoad(img, loadedImg => {
+      catRunImgs[idx] = loadedImg;
+    });
+  };
+  img.onerror = () => onAssetLoaded();
+  img.src = path;
+});
+
+SPECIAL_FLIGHT_PATHS.forEach((path, idx) => {
+  let img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    completeImageLoad(img, loadedImg => {
+      specialFlightImgs[idx] = loadedImg;
+    });
+  };
+  img.onerror = () => onAssetLoaded();
+  img.src = path;
+});
+
+BALLOON_SPECIAL_PATHS.forEach((path, idx) => {
+  let img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    completeImageLoad(img, loadedImg => {
+      balloonSpecialImgs[idx] = loadedImg;
+    });
+  };
+  img.onerror = () => onAssetLoaded();
+  img.src = path;
+});
+
+FURBALL_SPECIAL_PATHS.forEach((path, idx) => {
+  let img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    completeImageLoad(img, loadedImg => {
+      furballSpecialImgs[idx] = loadedImg;
+    });
+  };
+  img.onerror = () => onAssetLoaded();
+  img.src = path;
+});
+
+
+
+Object.keys(ASSETS_TO_LOAD).forEach(key => {
+  let img = new Image();
+  img.decoding = 'async';
+  img.onload = () => {
+    completeImageLoad(img, loadedImg => {
+      gameAssets[key] = loadedImg;
+    });
+  };
+  img.onerror = () => onAssetLoaded();
+  img.src = ASSETS_TO_LOAD[key];
+});
+
+
+// ----------------- ゲームシステム設定 -----------------
+const WALL_OFFSET = 60; // 壁の端からのマージン
+let scrollPos = 0; // 背景スクロール位置
+
+// プレイヤーオブジェクト
+let player = {
+  side: 'left', // 'left' or 'right'
+  state: 'run', // 'run', 'jump', 'dash', 'hurt'
+  y: 0, // 画面上のY座標
+  targetY: 0,
+  x: 0,
+  vx: 0, // HURT時用の水平速度
+  vy: 0, // HURT時用の垂直速度
+  w: 64,
+  h: 64,
+  angle: 0, // 描画回転角度
+  jumpProgress: 0, // ジャンプ移動の進捗 (0 to 1)
+  jumpSpeed: 5.5, // ジャンプ速度
+  dashTimer: 0,
+  invulnTimer: 0, // 必殺技終了後の無敵時間タイマー
+  shield: false, // またたびシールド
+  scaleX: 1, // 向き転換用スケール
+  animFrame: 0,
+  animTimer: 0,
+  dashAnimFrame: 0, // 必殺技（メガダッシュ）専用アニメーションフレーム
+  dashAnimTimer: 0,
+  dashType: 'none' // 必殺技を発動させたコンボ敵の種類（'crow', 'rat', 'yarn'）
+};
+
+
+
+// コンボ状態
+let combo = {
+  type: 'none', // 'crow', 'rat', 'yarn'
+  count: 0
+};
+
+let enemies = [];
+let obstacles = [];
+let particles = [];
+let screenShake = 0;
+let hitStop = 0;
+let backgroundStars = [];
+let pendingJumpEffects = 0;
+
+// 星屑背景の初期化
+for(let i=0; i<30; i++) {
+  backgroundStars.push({
+    x: Math.random() * 480,
+    y: Math.random() * 800,
+    size: Math.random() * 2 + 1,
+    speed: Math.random() * 0.5 + 0.2
+  });
+}
+
+// ----------------- リサイズ & キャンバス初期化 -----------------
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  // 高解像度ディスプレイ（スマホのRetina画面など）でのピクセル比を最大2.0倍にクランプ制限し、
+  // 描画ピクセル数を削減することで、スマホブラウザでの描画負荷を劇的に軽量化（カクつきを解消）します。
+  const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+  W = rect.width;
+  H = rect.height;
+  canvas.width = W * ratio;
+  canvas.height = H * ratio;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  
+  player.y = H * 0.65;
+  player.targetY = player.y;
+  player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+}
+window.addEventListener('resize', () => { setTimeout(resizeCanvas, 100); });
+setTimeout(resizeCanvas, 50);
+
+// ----------------- ヘルパー関数 -----------------
+function updateComboUI() {
+  const slots = [slot0, slot1, slot2];
+  const maxSlots = 3;
+  
+  slots.forEach((slot, index) => {
+    if (index < maxSlots) {
+      slot.classList.remove('hidden');
+      if (index < combo.count) {
+        slot.classList.add('active');
+        if (boss.active || combo.type === 'crow') slot.textContent = '🐦';
+        if (combo.type === 'rat') slot.textContent = '🎈';
+        if (combo.type === 'yarn') slot.textContent = '🧶';
+      } else {
+        slot.classList.remove('active');
+        slot.textContent = '⚫';
+      }
+    } else {
+      slot.classList.add('hidden'); // ボス戦中は3つ目のスロットを隠す
+    }
+  });
+}
+
+function spawnParticle(x, y, color, speedScale = 1, count = 8) {
+  const finalCount = Math.min(count, 12);
+  for(let i=0; i<finalCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (Math.random() * 4 + 2) * speedScale;
+    particles.push({
+      x: x,
+      y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1.0,
+      decay: Math.random() * 0.08 + 0.04,
+      size: Math.random() * 5 + 3,
+      color: color
+    });
+  }
+  if (particles.length > 100) {
+    particles.splice(0, particles.length - 100);
+  }
+}
+
+function queueJumpEffects() {
+  pendingJumpEffects = Math.min(pendingJumpEffects + 1, 2);
+}
+
+function flushDeferredEffects() {
+  while (pendingJumpEffects > 0) {
+    pendingJumpEffects--;
+    spawnParticle(player.x, player.y, 'rgba(255,255,255,0.4)', 0.5, 3);
+  }
+}
+
+function addScratchEffect(x, y) {
+  particles.push({
+    type: 'scratch',
+    x: x,
+    y: y,
+    life: 0.15,
+    size: 70,
+    angle: Math.random() * Math.PI * 2
+  });
+}
+
+// 被弾時にひっくり返って落下する死亡演出への遷移
+function triggerHurt() {
+  player.state = 'hurt';
+  player.vy = -550; // 一瞬ふわりと浮かび上がる
+  player.vx = (player.side === 'left' ? 250 : -250); // 壁から跳ね返って剥がれ落ちる
+  player.angle = 0;
+  se.playHurt();
+  
+  spawnParticle(player.x, player.y, '#ff477e', 1.8, 20);
+  screenShake = 3.5;
+  hitStop = 0.18;
+}
+
+// 被弾時のダメージ回避処理（シールド消費）
+function handlePlayerHit() {
+  if (player.shield) {
+    player.shield = false;
+    hitStop = 0.15;
+    screenShake = 2.5;
+    spawnParticle(player.x, player.y, '#48bb78', 1.5, 16);
+    
+    // 逆の壁へ自動でジャンプ回避させる
+    player.state = 'jump';
+    player.jumpProgress = 0.1;
+    return true;
+  }
+  return false;
+}
+
+// ----------------- ゲームループ制御 -----------------
+function resetGame() {
+  score = 0.0;
+  lastScoreVal = -1;
+  scoreEl.textContent = '0m';
+  enemies = [];
+  obstacles = [];
+  particles = [];
+  pendingJumpEffects = 0;
+  combo.type = 'none';
+  combo.count = 0;
+  updateComboUI();
+  
+  player.side = 'left';
+  player.state = 'run';
+  player.x = WALL_OFFSET;
+  player.y = H * 0.65;
+  player.vx = 0;
+  player.vy = 0;
+  player.jumpProgress = 0;
+  player.dashTimer = 0;
+  player.invulnTimer = 0;
+  player.angle = 0;
+  player.scaleX = 1;
+  player.shield = false;
+  player.dashAnimFrame = 0;
+  player.dashAnimTimer = 0;
+  player.dashType = 'none';
+
+  // ボス状態初期化
+  bossTriggered = false;
+  boss.active = false;
+  boss.state = 'none';
+  boss.x = W / 2;
+  boss.y = -150;
+  boss.hp = 3;
+  boss.maxHp = 3;
+  boss.defeatedCount = 0;
+  boss.timer = 0;
+  boss.spawnTimer = 0;
+  boss.animFrame = 0;
+  boss.animTimer = 0;
+  boss.side = 1;
+  boss.hurtTimer = 0;
+  boss.defeatPhase = 'none';
+
+  // 開始イベント状態
+  gameStartEventActive = false;
+  dialogueState.active = false;
+  dialogueState.waitingInput = false;
+
+  hideDialogue();
+  if (bossWarningOverlay) {
+    bossWarningOverlay.classList.add('hidden');
+  }
+  if (whiteFadeOverlay) {
+    whiteFadeOverlay.style.opacity = '0';
+    whiteFadeOverlay.classList.add('hidden');
+  }
+  if (cutinOverlay) {
+    cutinOverlay.classList.add('hidden');
+  }
+
+  scrollPos = 0;
+  lastTime = 0;
+}
+
+async function startGame() {
+  if (starting || running) return;
+  starting = true;
+  startBtn.disabled = true;
+  retryBtn.disabled = true;
+  
+  // ユーザー操作のタイミングでオーディオコンテキストをアンロック/初期化
+  se.init();
+  
+  try {
+    const startupTasks = [se.waitForUnlock()];
+    if (!assetsReady) {
+      const originalText = startBtn.textContent;
+      startBtn.textContent = '読み込み中...';
+      startupTasks.push(assetsReadyPromise);
+      await Promise.all(startupTasks);
+      startBtn.textContent = originalText;
+    } else {
+      await Promise.all(startupTasks);
+    }
+  } finally {
+    startBtn.disabled = false;
+    retryBtn.disabled = false;
+    starting = false;
+  }
+
+  if (running) return;
+  startScreen.classList.add('hidden');
+  overlay.classList.add('hidden');
+
+  // 地響き等の既存シンセ停止、すべての音響を完全にリセット
+  bossIntroSynth.stop();
+  try {
+    bgm.pause();
+    bgm.currentTime = 0;
+    bossIntroBgm.pause();
+    bossIntroBgm.currentTime = 0;
+    bossBgm.pause();
+    bossBgm.currentTime = 0;
+  } catch(e) {}
+  
+  resetGame();
+  resizeCanvas();
+  
+  gameStartEventActive = false;
+  running = true;
+  hideDialogue();
+  try {
+    bgm.currentTime = 0;
+    bgm.play().catch(e => console.log('BGM Play block:', e));
+  } catch(e) {}
+  
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+
+function gameOver() {
+  running = false;
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    rafId = 0;
+  }
+  gameStartEventActive = false;
+  bossIntroSynth.stop();
+  try { bgm.pause(); } catch(e) {}
+  try { bossIntroBgm.pause(); } catch(e) {}
+  try { bossBgm.pause(); } catch(e) {}
+  try {
+    gameoverSound.currentTime = 0;
+    gameoverSound.play().catch(e => {});
+  } catch(e) {}
+  
+  const finalScore = Math.floor(score);
+  if (finalScore > highScore) {
+    highScore = finalScore;
+    localStorage.setItem(STORAGE_KEY, String(highScore));
+    highEl.textContent = highScore + 'm';
+  }
+  
+  resultScore.textContent = finalScore + 'm';
+  resultHigh.textContent = highScore + 'm';
+  overlay.classList.remove('hidden');
+}
+
+// ----------------- オブジェクト出現ロジック -----------------
+let spawnTimer = 0;
+function handleSpawning(dt, gameSpeed) {
+  if (player.state === 'hurt' || player.state === 'dash' || boss.active) return;
+  
+  const currentHeight = Math.floor(score);
+  // 難易度の自動上昇を廃止し、「ボスを倒した回数（撃破フラグ）」に基づいて出現間隔を変更
+  let spawnInterval = 1.6 - boss.defeatedCount * 0.25;
+  if (spawnInterval < 0.7) spawnInterval = 0.7;
+  
+  spawnTimer += dt * (gameSpeed / 400);
+  if (spawnTimer > spawnInterval) {
+    spawnTimer = 0;
+    
+    const randVal = Math.random();
+    let collarChance = 0.15; // 初期首輪確率
+    if (boss.defeatedCount >= 1) collarChance = 0.23;
+    if (boss.defeatedCount >= 2) collarChance = 0.32;
+    
+    if (randVal < 0.24) {
+      // カラス：左右の壁の間をジグザグに何度も往復飛行するスリリングな軌道
+      const side = Math.random() < 0.5 ? 'left' : 'right';
+      const baseVx = 210 + (currentHeight * 0.1);
+      const chosenVx = (side === 'left' ? 1 : -1) * Math.min(baseVx, 450);
+      
+      enemies.push({
+        type: 'crow',
+        x: side === 'left' ? WALL_OFFSET + 10 : W - WALL_OFFSET - 10,
+        y: -50,
+        w: 54,
+        h: 54,
+        vx: chosenVx, // 左右往復速度
+        vy: 130, // 降下速度
+        scaleX: side === 'left' ? 1 : -1, // 画像反転用
+        timer: 0,
+        animFrame: 0,
+        animTimer: 0
+      });
+      
+    } else if (randVal < 0.46) {
+      // 風船ネズミ：壁際を塞ぐように急降下
+      const ratSides = [WALL_OFFSET + 10, W / 2, W - WALL_OFFSET - 10];
+      const chosenX = ratSides[Math.floor(Math.random() * ratSides.length)];
+      
+        enemies.push({
+          type: 'rat',
+          x: chosenX,
+          initialX: chosenX,
+          y: -50,
+          w: 46,
+          h: 76,
+          vy: 105,
+          timer: 0,
+          phase: Math.random() * Math.PI * 2,
+          animFrame: 0,
+        animTimer: 0
+      });
+      
+    } else if (randVal < 0.65) {
+      // 左右に高速バウンドする毛糸玉
+      const side = Math.random() < 0.5 ? 'left' : 'right';
+      const baseBounceVx = 320 + (currentHeight * 0.12);
+      const chosenVx = Math.min(baseBounceVx, 550);
+      
+      enemies.push({
+        type: 'yarn',
+        side: side,
+        x: side === 'left' ? WALL_OFFSET + 10 : W - WALL_OFFSET - 10,
+        y: -50,
+        w: 44,
+        h: 44,
+        vx: (side === 'left' ? 1 : -1) * chosenVx,
+        vy: 140,
+        rot: 0,
+        rotSpeed: (side === 'left' ? 1 : -1) * 6,
+        squashX: 1.0,
+        squashY: 1.0
+      });
+      
+    } else if (randVal < 0.65 + collarChance) {
+      const side = Math.random() < 0.5 ? 'left' : 'right';
+      obstacles.push({
+        type: 'collar',
+        side: side,
+        x: side === 'left' ? WALL_OFFSET - 5 : W - WALL_OFFSET + 5,
+        y: -80,
+        w: 52,
+        h: 72
+      });
+    } else {
+      const isHighHeight = currentHeight > 800;
+      if (!isHighHeight || Math.random() < 0.4) {
+        const side = Math.random() < 0.5 ? 'left' : 'right';
+        obstacles.push({
+          type: 'shield',
+          side: side,
+          x: side === 'left' ? WALL_OFFSET + 25 : W - WALL_OFFSET - 25,
+          y: -60,
+          w: 40,
+          h: 40
+        });
+      }
+    }
+  }
+}
+
+// ----------------- ボスアクション制御 -----------------
+function triggerBossIntro() {
+  boss.active = true;
+  boss.state = 'warning';
+  boss.hp = 3;
+  boss.maxHp = 3;
+  boss.x = W / 2;
+  boss.y = -150;
+  boss.side = 1;
+  boss.spawnTimer = 0;
+  boss.hurtTimer = 0;
+  boss.timer = 2.4;
+
+  // ボスアラート突入時、画面上に存在していた通常敵・障害物を一括クリア
+  enemies = [];
+  obstacles = [];
+
+  // 通常BGM停止
+  try {
+    bgm.pause();
+  } catch(e) {}
+
+  // 警告画面表示 & 地響き開始
+  if (bossWarningOverlay) {
+    bossWarningOverlay.classList.remove('hidden');
+  }
+  bossIntroSynth.start();
+  hideDialogue();
+
+  // 猫停止
+  player.state = 'run';
+  player.vx = 0;
+  player.vy = 0;
+  player.jumpProgress = 0;
+  player.angle = 0;
+  
+}
+
+function startBossIntroDialogue() {
+  boss.state = 'intro_dialogue';
+  bossIntroSynth.stop();
+  if (bossWarningOverlay) {
+    bossWarningOverlay.classList.add('hidden');
+  }
+  startDialogue('なんじゃ～～', 'face/Neko-bikkuri.png', () => {
+    startBossDescent();
+  }, { mode: 'shout' });
+}
+
+function startBossDescent() {
+  boss.state = 'intro';
+  boss.timer = 14.0; // 14秒の降臨時間
+  
+  // ボス登場BGM再生 (14秒)
+  try {
+    bossIntroBgm.currentTime = 0;
+    bossIntroBgm.play().catch(e => console.log('Boss Intro BGM blocked:', e));
+  } catch(e) {}
+
+  // 降臨中の効果音テキスト
+  showEffectText('ゴゴゴゴゴゴゴ...', 1200, 'effect');
+}
+
+function triggerBossFight() {
+  boss.state = 'fight_dialogue'; // 戦闘前会話イベントステート
+  
+  bossIntroSynth.stop();
+  try {
+    bossIntroBgm.pause();
+  } catch(e) {}
+
+  if (bossWarningOverlay) {
+    bossWarningOverlay.classList.add('hidden');
+  }
+
+  // ドラクエ風に喋り、完了後に決定キーで戦闘開始
+  startDialogue('必殺技でやつを倒すのじゃ', 'face/Neko-ikari.png', () => {
+    startBossFight();
+  }, { mode: 'shout' });
+}
+
+function startBossFight() {
+  boss.state = 'fight';
+  boss.timer = 0;
+  boss.spawnTimer = 1.5; // すぐに最初のカラスを出さないように猶予を設ける
+  
+  // ボス戦闘BGM再生
+  try {
+    bossBgm.currentTime = 0;
+    bossBgm.play().catch(e => console.log('Boss BGM blocked:', e));
+  } catch(e){}
+
+  hideDialogue();
+}
+
+function damageBoss() {
+  if (boss.state !== 'fight') return;
+  
+  boss.hp--;
+  se.playHit();
+  
+  // 被ダメージフラッシュ＆ガタガタ揺れ演出
+  boss.hurtTimer = 0.5;
+  
+  // 大ダメージパーティクル
+  spawnParticle(boss.x, boss.y, '#ff3b30', 2.0, 30);
+  screenShake = 6.0;
+  hitStop = 0.3; // 強烈なヒットストップ
+
+  // メガダッシュ（必殺技）強制終了処理
+  player.state = 'run';
+  player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+  player.y = H * 0.65;
+  player.invulnTimer = 2.0; // 長めの無敵
+  
+  if (boss.hp <= 0) {
+    triggerBossDefeat();
+  } else {
+    showEffectText('効いた!!', 650, 'effect');
+  }
+}
+
+function triggerBossDefeat() {
+  boss.state = 'defeat';
+  boss.timer = 2.4;
+  boss.defeatPhase = 'fade';
+  boss.hurtTimer = 2.4;
+  enemies = [];
+  obstacles = [];
+  combo.type = 'none';
+  combo.count = 0;
+  updateComboUI();
+  hideDialogue();
+  setWhiteFade(true, 1200);
+  
+  // ボスBGMフェードアウト
+  let fadeCount = 0;
+  const fadeInterval = setInterval(() => {
+    try {
+      if (bossBgm.volume > 0.05) {
+        bossBgm.volume -= 0.05;
+      } else {
+        bossBgm.pause();
+        bossBgm.volume = 1.0;
+        clearInterval(fadeInterval);
+      }
+    } catch(e) {
+      clearInterval(fadeInterval);
+    }
+  }, 50);
+
+}
+
+function finishBossDefeatFade() {
+  boss.active = false;
+  boss.state = 'none';
+  boss.defeatPhase = 'dialogue';
+  boss.defeatedCount++;
+  enemies = [];
+  obstacles = [];
+  particles = [];
+  player.state = 'run';
+  player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+  player.y = H * 0.65;
+  player.invulnTimer = 1.0;
+  setWhiteFade(false, 900);
+  setTimeout(() => {
+    showAutoDialogue('倒したようじゃ！', 'face/Neko-yorokobi.png', 1450, { mode: 'shout' }, () => {
+      const fanfareMs = se.playFanfare();
+      showCutin('ボス倒したよ！', 'やったね!!', fanfareMs, 'victory');
+      setTimeout(() => {
+        showAutoDialogue('さぁ先に進むぞ', 'face/Neko-Niyari.jpg', 1200, { mode: 'shout' }, () => {
+          boss.defeatPhase = 'none';
+          resumeNormalBgm();
+          hideDialogue();
+        });
+      }, Math.max(600, fanfareMs - 1200));
+    });
+  }, 900);
+}
+
+function resumeNormalBgm() {
+  try {
+    bossBgm.pause();
+    bossBgm.currentTime = 0;
+    bossBgm.volume = 1.0;
+  } catch(e) {}
+  try {
+    bgm.currentTime = 0;
+    bgm.play().catch(e => {});
+  } catch(e) {}
+}
+
+// ----------------- 更新処理 (UPDATE) -----------------
+function update(dt) {
+  // ドラクエ風タイピング会話の更新
+  updateDialogue(dt);
+  
+  if (gameStartEventActive || boss.defeatPhase === 'dialogue' || (boss.active && (boss.state === 'warning' || boss.state === 'intro_dialogue' || boss.state === 'fight_dialogue'))) {
+    // 会話中（キー入力待ち）はゲーム世界を完全に静止
+    player.animTimer = 0;
+    player.vx = 0;
+    player.vy = 0;
+    player.jumpProgress = 0;
+    player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+    player.y = H * 0.65;
+    
+    // 星屑だけは優雅にゆっくり流す
+    backgroundStars.forEach(star => {
+      star.y += (star.speed * 20) * dt;
+      if (star.y > H) {
+        star.y = -10;
+        star.x = Math.random() * W;
+      }
+    });
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+      let p = particles[i];
+      p.life -= p.decay || 0.05;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    if (boss.active && boss.state === 'warning') {
+      screenShake = Math.max(screenShake, 2.5);
+      boss.timer -= dt;
+      if (boss.timer <= 0) {
+        startBossIntroDialogue();
+      }
+    }
+    return;
+  }
+
+  if (hitStop > 0) {
+    hitStop -= dt;
+    return;
+  }
+  
+  if (player.state === 'hurt') {
+    player.vy += 2000 * dt;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+    player.angle += (player.vx > 0 ? 1 : -1) * 12 * dt;
+    
+    if (player.y > H + 80) {
+      gameOver();
+    }
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+      let p = particles[i];
+      p.life -= p.decay || 0.05;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    return;
+  }
+  
+  if (player.invulnTimer > 0) {
+    player.invulnTimer -= dt;
+  }
+  
+  const currentHeight = Math.floor(score);
+  // 難易度の自動上昇を廃止し、「ボスを倒した回数（撃破フラグ）」に基づいて速度を変更
+  let gameSpeed = 380 + boss.defeatedCount * 180;
+  if (gameSpeed > 1100) gameSpeed = 1100;
+  
+  if (player.state === 'dash') {
+    // 必殺技中は超高速
+    gameSpeed = 2200;
+    player.dashTimer -= dt;
+    if (player.dashTimer <= 0) {
+      player.state = 'run';
+      player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+      player.y = H * 0.65;
+      player.invulnTimer = 1.5; 
+      spawnParticle(player.x, player.y, '#f07dfa', 1.0, 10);
+      
+      // セリフを元に戻す
+      hideDialogue();
+    }
+  }
+  
+  // ボス戦中（イントロ、戦闘、撃破）はスクロール進行を完全に停止する
+  if (boss.active) {
+    gameSpeed = 0;
+  }
+  
+  // 【仕様修正：メガダッシュ（必殺技）の最中も、その超高速な進行速度（2200px/s）に合わせて高度メーターをモリモリ超高速加算・カウントアップする！】
+  score += dt * (gameSpeed / 8.0);
+  const displayScore = Math.floor(score);
+  if (displayScore !== lastScoreVal) {
+    lastScoreVal = displayScore;
+    scoreEl.textContent = displayScore + 'm';
+  }
+  
+  // 5000m突破でボス降臨
+  if (!bossTriggered && score >= BOSS_TRIGGER_SCORE && player.state !== 'hurt') {
+    bossTriggered = true;
+    triggerBossIntro();
+  }
+  
+  scrollPos += gameSpeed * dt;
+  
+  if (screenShake > 0) {
+    screenShake -= dt * 10;
+  }
+  
+  backgroundStars.forEach(star => {
+    star.y += (gameSpeed * 0.15 + star.speed * 50) * dt;
+    if (star.y > H) {
+      star.y = -10;
+      star.x = Math.random() * W;
+    }
+  });
+  
+  player.animTimer += dt;
+  if (player.animTimer > 0.08) {
+    player.animTimer = 0;
+    player.animFrame = (player.animFrame + 1) % 4;
+  }
+  
+  if (player.state === 'run') {
+    player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+    player.angle = 0;
+    player.scaleX = (player.side === 'left') ? 1 : -1;
+  } else if (player.state === 'jump') {
+    player.jumpProgress += player.jumpSpeed * dt;
+    if (player.jumpProgress >= 1.0) {
+      player.jumpProgress = 0;
+      player.state = 'run';
+      player.side = (player.side === 'left') ? 'right' : 'left';
+      player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+    } else {
+      const startX = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+      const targetX = (player.side === 'left') ? W - WALL_OFFSET : WALL_OFFSET;
+      
+      const progress = player.jumpProgress;
+      player.x = startX + (targetX - startX) * progress;
+      player.angle += (player.side === 'left' ? 1 : -1) * 18 * dt;
+    }
+  } else if (player.state === 'dash') {
+    // 必殺技（メガダッシュ）中の蛇行や傾きといった不要な動きを排除し、一直線に高速上昇させます。ボス戦中はボスに必ず重なるように自動吸着します。
+    player.x = boss.active ? boss.x : W / 2;
+    player.angle = 0;
+    
+    // 【バグ修正：ボス戦中はスクロールが止まる(gameSpeed=0)ため、物理的に猫自身がY座標を高速上昇してボスへ突撃する！】
+    if (boss.active && boss.state === 'fight') {
+      player.y -= 1200 * dt;
+    }
+    
+    if (Math.random() < 0.35) {
+      spawnParticle(player.x + (Math.random() * 80 - 40), player.y + 50, Math.random() < 0.5 ? '#bd34eb' : '#60a5fa', 0.8, 4);
+    }
+    
+    // 必殺技（メガダッシュ）専用の10フレーム高速羽ばたきアニメーションの進行
+    player.dashAnimTimer += dt;
+    if (player.dashAnimTimer > 0.045) { // 0.045秒（秒間約22フレーム）で高速に羽ばたく
+      player.dashAnimTimer = 0;
+      player.dashAnimFrame = (player.dashAnimFrame + 1) % 10;
+    }
+  }
+
+  
+  // 敵の更新
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    e.y += gameSpeed * dt;
+    e.timer = (e.timer || 0) + dt;
+    
+    if (e.type === 'crow') {
+      // カラス：左右の壁の間をジグザグに何度も往復飛行する物理移動
+      e.x += e.vx * dt;
+      e.y += e.vy * dt;
+      
+      const leftLimit = WALL_OFFSET + 10;
+      const rightLimit = W - WALL_OFFSET - 10;
+      if (e.x < leftLimit) {
+        e.x = leftLimit;
+        e.vx = -e.vx; // 壁で跳ね返り逆の壁へ
+        e.scaleX = 1;
+      } else if (e.x > rightLimit) {
+        e.x = rightLimit;
+        e.vx = -e.vx;
+        e.scaleX = -1;
+      }
+      
+      e.animTimer += dt;
+      if(e.animTimer > 0.1) {
+        e.animTimer = 0;
+        e.animFrame = (e.animFrame + 1) % 2;
+      }
+    } else if (e.type === 'rat') {
+      e.x = e.initialX + Math.sin(e.timer * 2.2 + e.phase) * 35;
+      e.y += (e.vy || 95) * dt;
+    } else if (e.type === 'yarn') {
+      e.x += e.vx * dt;
+      e.y += e.vy * dt;
+      e.rot += e.rotSpeed * dt;
+      
+      e.squashX += (1.0 - e.squashX) * 12 * dt;
+      e.squashY += (1.0 - e.squashY) * 12 * dt;
+      
+      const leftLimit = WALL_OFFSET + e.w/2 - 4;
+      const rightLimit = W - WALL_OFFSET - e.w/2 + 4;
+      
+      if (e.x < leftLimit) {
+        e.x = leftLimit;
+        e.vx = -e.vx * 0.95;
+        e.rotSpeed = -e.rotSpeed * 1.1;
+        e.squashX = 0.55;
+        e.squashY = 1.45;
+        spawnParticle(e.x - 5, e.y, '#fb923c', 0.6, 5);
+      } else if (e.x > rightLimit) {
+        e.x = rightLimit;
+        e.vx = -e.vx * 0.95;
+        e.rotSpeed = -e.rotSpeed * 1.1;
+        e.squashX = 0.55;
+        e.squashY = 1.45;
+        spawnParticle(e.x + 5, e.y, '#fb923c', 0.6, 5);
+      }
+    }
+    
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist < (player.w/2 + e.w/2 - 8) && player.state !== 'dash' && player.invulnTimer <= 0) {
+      if (player.state === 'jump') {
+        addScratchEffect(e.x, e.y);
+        spawnParticle(e.x, e.y, e.type === 'crow' ? '#cbd5e0' : e.type === 'rat' ? '#ff9a9e' : '#ffd66b', 1.2, 12);
+        
+        // 敵撃破効果音の再生
+        se.playHit();
+        
+        hitStop = 0.08;
+        screenShake = 1.8;
+        
+        if (boss.active) {
+          if (e.type === 'crow') {
+            combo.type = 'crow';
+            combo.count++;
+          } else {
+            combo.type = 'none';
+            combo.count = 0;
+            showEffectText('鳥でコンボをつなげ!!', 700, 'effect');
+          }
+        } else {
+          // 通常時は連続コンボ
+          if (combo.type === e.type) {
+            combo.count++;
+          } else {
+            combo.type = e.type;
+            combo.count = 1;
+          }
+        }
+        
+        updateComboUI();
+        
+        const requiredCombo = 3;
+        if (combo.count >= requiredCombo) {
+          const activatedDashType = boss.active ? 'crow' : combo.type;
+          player.state = 'dash';
+          player.dashType = activatedDashType; // 必殺技をトリガーした敵の種類を保存！
+          player.dashTimer = 3.0;
+          screenShake = 3.5;
+          combo.count = 0;
+          combo.type = 'none';
+          updateComboUI();
+          spawnParticle(player.x, player.y, '#f07dfa', 2.0, 25);
+          
+          showCutin('MEGA DASH', boss.active ? 'MODE: BIRD' : `MODE: ${activatedDashType.toUpperCase()}`, 1250);
+          showEffectText('ゆけ～～～!!', 950, 'shout');
+
+          // 必殺技（メガダッシュ）発動SE ＆ ループSEの再生
+          se.playDashStart();
+          se.playDashLoop(3.0);
+        }
+
+        
+        enemies.splice(i, 1);
+        continue;
+      } else {
+        if (!handlePlayerHit()) {
+          triggerHurt();
+          return;
+        }
+      }
+    }
+    
+    if (e.y > H + 100) {
+      enemies.splice(i, 1);
+    }
+  }
+  
+  // 障害物/アイテムの更新
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let o = obstacles[i];
+    o.y += gameSpeed * dt;
+    
+    const dx = player.x - o.x;
+    const dy = Math.abs(player.y - o.y);
+    
+    if (o.type === 'collar') {
+      if (player.state === 'run' && player.side === o.side && player.state !== 'dash' && player.invulnTimer <= 0) {
+        if (dy < (player.h/2 + o.h/2 - 12)) {
+          if (!handlePlayerHit()) {
+            triggerHurt();
+            return;
+          }
+        }
+      }
+    } else if (o.type === 'shield') {
+      if (Math.hypot(player.x - o.x, player.y - o.y) < (player.w/2 + o.w/2)) {
+        player.shield = true;
+        spawnParticle(o.x, o.y, '#48bb78', 1.0, 10);
+        obstacles.splice(i, 1);
+        continue;
+      }
+    }
+    
+    if (o.y > H + 100) {
+      obstacles.splice(i, 1);
+    }
+  }
+  
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.life -= p.decay || 0.05;
+    if (p.type === 'scratch') {
+      if (p.life <= 0) particles.splice(i, 1);
+      continue;
+    }
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+  
+  // ----------------- ボス更新ロジック -----------------
+  if (boss.active) {
+    boss.timer -= dt;
+    
+    // 被弾演出タイマーの減算
+    if (boss.hurtTimer > 0) {
+      boss.hurtTimer -= dt;
+    }
+    
+    if (boss.state === 'intro') {
+      // 降臨警告 & アラート演出
+      screenShake = Math.max(screenShake, 2.0); // 激震
+      
+      // 【仕様修正：14秒かけてゆっくり上から均等な速度で降臨する】
+      const ratio = (14.0 - boss.timer) / 14.0;
+      boss.y = -150 + (boss.targetY - (-150)) * Math.min(1.0, ratio);
+      
+      // ボスパタパタ（羽ばたき）アニメーション
+      boss.animTimer += dt;
+      if (boss.animTimer > 0.3) {
+        boss.animTimer = 0;
+        boss.animFrame = (boss.animFrame + 1) % BOSS_BIRD_FRAMES;
+      }
+      
+      // 猫は止まり、アニメも静止
+      player.animTimer = 0;
+      player.x = (player.side === 'left') ? WALL_OFFSET : W - WALL_OFFSET;
+      player.y = H * 0.65;
+      
+      if (boss.timer <= 0) {
+        triggerBossFight();
+      }
+    } else if (boss.state === 'fight') {
+      // ボス左右浮遊
+      boss.timer = (boss.timer || 0) + dt;
+      const targetX = W / 2 + Math.sin(boss.timer * 1.2) * (W / 2 - WALL_OFFSET - 50);
+      if (targetX > boss.x) {
+        boss.side = -1; // 画像反転
+      } else {
+        boss.side = 1;
+      }
+      boss.x += (targetX - boss.x) * 2.0 * dt;
+      
+      // 羽ばたきアニメ
+      boss.animTimer += dt;
+      if (boss.animTimer > 0.2) {
+        boss.animTimer = 0;
+        boss.animFrame = (boss.animFrame + 1) % BOSS_BIRD_FRAMES;
+      }
+      
+      // ボスは敵を1体ずつ召喚する
+      boss.spawnTimer += dt;
+      if (boss.spawnTimer >= 1.65) {
+        boss.spawnTimer = 0;
+        const summonRoll = Math.random();
+        if (summonRoll < 0.55) {
+          const dir = Math.random() < 0.5 ? -1 : 1;
+          enemies.push({
+            type: 'crow',
+            x: boss.x,
+            y: boss.y + 20,
+            w: 54,
+            h: 54,
+            vx: dir * 150,
+            vy: 175,
+            scaleX: dir,
+            timer: 0,
+            animFrame: 0,
+            animTimer: 0
+          });
+        } else if (summonRoll < 0.78) {
+          const chosenX = [WALL_OFFSET + 10, W / 2, W - WALL_OFFSET - 10][Math.floor(Math.random() * 3)];
+          enemies.push({
+            type: 'rat',
+            x: chosenX,
+            initialX: chosenX,
+            y: boss.y + 20,
+            w: 46,
+            h: 76,
+            vy: 95,
+            timer: 0,
+            phase: Math.random() * Math.PI * 2,
+            animFrame: 0,
+            animTimer: 0
+          });
+        } else {
+          const side = Math.random() < 0.5 ? 'left' : 'right';
+          enemies.push({
+            type: 'yarn',
+            side: side,
+            x: side === 'left' ? WALL_OFFSET + 10 : W - WALL_OFFSET - 10,
+            y: boss.y + 20,
+            w: 44,
+            h: 44,
+            vx: (side === 'left' ? 1 : -1) * 360,
+            vy: 150,
+            rot: 0,
+            rotSpeed: (side === 'left' ? 1 : -1) * 6,
+            squashX: 1.0,
+            squashY: 1.0
+          });
+        }
+        
+        boss.animFrame = 1; // 一瞬羽を閉じる
+      }
+      
+      // 必殺技（メガダッシュ）中の体当たりヒット判定
+      if (player.state === 'dash') {
+        // 猫のY座標がボスのY座標に重なった、あるいは上突き抜けた瞬間に100%確実にヒット！
+        if (player.y <= boss.y + 60) {
+          damageBoss();
+        }
+      }
+    } else if (boss.state === 'defeat') {
+      // 撃破演出
+      screenShake = Math.max(screenShake, 2.5);
+      boss.y += 32 * dt;
+      
+      if (Math.random() < 0.3) {
+        spawnParticle(boss.x + (Math.random()*70-35), boss.y + (Math.random()*70-35), '#ffffff', 1.2, 5);
+        spawnParticle(boss.x + (Math.random()*70-35), boss.y + (Math.random()*70-35), '#ffd166', 1.0, 4);
+      }
+      
+      if (boss.timer <= 0) {
+        finishBossDefeatFade();
+      }
+    }
+  }
+
+  handleSpawning(dt, gameSpeed);
+}
+
+// ----------------- 描画処理 (DRAW) -----------------
+function draw() {
+  ctx.save();
+  // 必殺技（メガダッシュ）中は素材自体が激しくアニメーションするため、画面シェイクは適用せず、美しく描画を安定させます
+  if (screenShake > 0 && player.state !== 'hurt' && player.state !== 'dash' && running) {
+    const dx = (Math.random() * 2 - 1) * screenShake * 4;
+    const dy = (Math.random() * 2 - 1) * screenShake * 4;
+    ctx.translate(dx, dy);
+  }
+
+  
+  ctx.clearRect(0, 0, W, H);
+  
+  // 1. 背景の描画
+  ctx.fillStyle = '#060713';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#111326';
+  ctx.fillRect(WALL_OFFSET, 0, W - WALL_OFFSET * 2, H);
+  
+  ctx.fillStyle = '#ffffff';
+  backgroundStars.forEach(star => {
+    ctx.globalAlpha = star.speed * 0.8;
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1.0;
+
+  if (player.state === 'dash') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 14; i++) {
+      const x = ((i * 37 + scrollPos * 0.9) % (W + 120)) - 60;
+      const y = (i * 59 + scrollPos * 1.6) % H;
+      const len = 70 + (i % 4) * 24;
+      const grad = ctx.createLinearGradient(x, y + len, x, y - len);
+      grad.addColorStop(0, 'rgba(240,125,250,0)');
+      grad.addColorStop(0.5, 'rgba(255,255,255,0.65)');
+      grad.addColorStop(1, 'rgba(59,130,246,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3 + (i % 3);
+      ctx.beginPath();
+      ctx.moveTo(x, y + len);
+      ctx.lineTo(x + (i % 2 ? 18 : -18), y - len);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  
+  // 2. 左右の壁 (LANCZOS最適化シームレスレンガパターン)
+  if (brickPattern) {
+    ctx.save();
+    const matrix = new DOMMatrix().translate(0, scrollPos);
+    brickPattern.setTransform(matrix);
+    ctx.fillStyle = brickPattern;
+    
+    // 左の壁の描画
+    ctx.fillRect(0, 0, WALL_OFFSET, H);
+    // 右の壁の描画
+    ctx.fillRect(W - WALL_OFFSET, 0, WALL_OFFSET, H);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#1e1b29';
+    ctx.fillRect(0, 0, WALL_OFFSET, H);
+    ctx.fillRect(W - WALL_OFFSET, 0, WALL_OFFSET, H);
+  }
+  
+  // 3. 障害物 ＆ アイテム
+  obstacles.forEach(o => {
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    
+    if (o.type === 'collar') {
+      if (gameAssets.collar) {
+        if (o.side === 'right') {
+          ctx.scale(-1, 1);
+        }
+        ctx.drawImage(gameAssets.collar, -o.w/2, -o.h/2, o.w, o.h);
+      }
+    } else if (o.type === 'shield') {
+      if (gameAssets.shield) {
+        ctx.drawImage(gameAssets.shield, -o.w/2, -o.h/2, o.w, o.h);
+        ctx.strokeStyle = 'rgba(72, 187, 120, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, o.w/2 + Math.sin(scrollPos*0.08)*3, 0, Math.PI*2);
+        ctx.stroke();
+      }
+    }
+    
+    ctx.restore();
+  });
+  
+  // 4. 敵 (カラス、ネズミ気球、毛玉)
+  enemies.forEach(e => {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    
+    if (e.type === 'crow') {
+      const crowFrame = (e.animFrame === 0) ? gameAssets.crow0 : gameAssets.crow1;
+      if (crowFrame) {
+        ctx.save();
+        ctx.scale(e.scaleX, 1);
+        ctx.drawImage(crowFrame, -e.w/2, -e.h/2, e.w, e.h);
+        ctx.restore();
+      }
+    } else if (e.type === 'rat') {
+      if (gameAssets.rat) {
+        ctx.save();
+        const floatY = Math.cos(e.timer * 3.2 + e.phase) * 8;
+        const tilt = Math.sin(e.timer * 1.8 + e.phase) * 0.08;
+        
+        ctx.translate(0, floatY);
+        ctx.rotate(tilt);
+        
+        const imgRatio = gameAssets.rat.width / gameAssets.rat.height;
+        const drawW = 46;
+        const drawH = drawW / imgRatio;
+        
+        ctx.drawImage(gameAssets.rat, -drawW/2, -drawH/2, drawW, drawH);
+        ctx.restore();
+      }
+    } else if (e.type === 'yarn') {
+      ctx.rotate(e.rot);
+      ctx.scale(e.squashX, e.squashY);
+      if (gameAssets.yarn) {
+        ctx.drawImage(gameAssets.yarn, -e.w/2, -e.h/2, e.w, e.h);
+      }
+    }
+    ctx.restore();
+  });
+  
+  // 5. プレイヤー (黒猫)
+  const px = player.x;
+  const py = player.y;
+  
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(player.angle);
+  ctx.scale(player.scaleX, 1);
+  
+  // 無敵時間の描画
+  if (player.invulnTimer > 0 && player.state !== 'hurt') {
+    const blink = Math.floor(player.invulnTimer * 12) % 2 === 0;
+    if (blink) {
+      ctx.globalAlpha = 0.35;
+    }
+    
+    ctx.strokeStyle = 'rgba(240, 125, 250, 0.4)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 38 + Math.sin(scrollPos * 0.1) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  
+  // またたびシールド
+  if (player.shield && player.state !== 'hurt') {
+    ctx.strokeStyle = 'rgba(72, 187, 120, 0.6)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, 42 + Math.sin(scrollPos*0.1)*3, 0, Math.PI*2);
+    ctx.stroke();
+    
+    ctx.fillStyle = 'rgba(72, 187, 120, 0.15)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 42 + Math.sin(scrollPos*0.1)*3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  if (player.state === 'dash') {
+    ctx.strokeStyle = 'rgba(240, 125, 250, 0.5)';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, 104 + Math.sin(scrollPos*0.2)*7, 0, Math.PI*2);
+    ctx.stroke();
+  }
+  
+  // 猫スプライト描画
+  if (loadedAssetsCount >= totalAssetsToLoad) {
+    if (player.state === 'dash') {
+      let currentImg = null;
+      let drawW = 192;
+      
+      // 発動させたコンボ敵の種類に応じて、必殺技スプライトを動的に切り替える
+      if (player.dashType === 'crow' && specialFlightImgs[player.dashAnimFrame]) {
+        currentImg = specialFlightImgs[player.dashAnimFrame];
+      } else if (player.dashType === 'rat' && balloonSpecialImgs[player.dashAnimFrame]) {
+        currentImg = balloonSpecialImgs[player.dashAnimFrame];
+      } else if (player.dashType === 'yarn' && furballSpecialImgs[player.dashAnimFrame]) {
+        currentImg = furballSpecialImgs[player.dashAnimFrame];
+      } else {
+        // その他のフォールバックは翼猫を使用
+        currentImg = specialFlightImgs[player.dashAnimFrame];
+      }
+
+      
+      if (currentImg) {
+        const imgRatio = currentImg.width / currentImg.height;
+        const drawH = drawW / imgRatio; // つぶれ防止
+        ctx.drawImage(currentImg, -drawW/2, -drawH/2, drawW, drawH);
+      } else if (catRunImgs[player.animFrame]) {
+        ctx.drawImage(catRunImgs[player.animFrame], -player.w/2, -player.h/2, player.w, player.h);
+      }
+    } else if (catRunImgs[player.animFrame]) {
+      // 通常時は走る猫アニメーション
+      ctx.drawImage(catRunImgs[player.animFrame], -player.w/2, -player.h/2, player.w, player.h);
+    }
+  } else {
+
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.ellipse(0, 4, 20, 24, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+  
+  // 6. エフェクト・パーティクル
+  particles.forEach(p => {
+    if (p.type === 'scratch') {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.strokeStyle = '#f07dfa';
+      ctx.lineWidth = 4 * (p.life / 0.15);
+      const sz = p.size;
+      ctx.beginPath();
+      ctx.moveTo(-sz/2, -10); ctx.lineTo(sz/2, -6);
+      ctx.moveTo(-sz/2 + 5, 0); ctx.lineTo(sz/2 + 5, 4);
+      ctx.moveTo(-sz/2 - 5, 10); ctx.lineTo(sz/2 - 5, 14);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1.0;
+  
+  // ----------------- ボス描画ロジック -----------------
+  if (boss.active && (boss.state === 'intro' || boss.state === 'fight' || boss.state === 'defeat')) {
+    ctx.save();
+    
+    let bx = boss.x;
+    let by = boss.y;
+    if (boss.state === 'intro') {
+      bx += (Math.random() * 2 - 1) * 3;
+      by += (Math.random() * 2 - 1) * 3;
+    } else if (boss.state === 'defeat') {
+      bx += (Math.random() * 2 - 1) * 5;
+      by += (Math.random() * 2 - 1) * 5;
+    }
+    
+    // 被弾中のガタガタ揺れるブレ演出
+    if (boss.hurtTimer > 0) {
+      bx += (Math.random() * 2 - 1) * 9;
+      by += (Math.random() * 2 - 1) * 9;
+    }
+    
+    ctx.translate(bx, by);
+    
+    const bossFrame = gameAssets.bossBird || ((boss.animFrame === 0) ? gameAssets.crow0 : gameAssets.crow1);
+    if (bossFrame) {
+      ctx.save();
+      if (boss.state === 'defeat') {
+        ctx.globalAlpha = Math.max(0, boss.timer / 2.4);
+      }
+      ctx.scale(boss.side, 1);
+      if (gameAssets.bossBird) {
+        const frameIndex = boss.animFrame % BOSS_BIRD_FRAMES;
+        const frameW = bossFrame.width / BOSS_BIRD_COLS;
+        const frameH = bossFrame.height / BOSS_BIRD_ROWS;
+        const sx = (frameIndex % BOSS_BIRD_COLS) * frameW;
+        const sy = Math.floor(frameIndex / BOSS_BIRD_COLS) * frameH;
+        ctx.drawImage(bossFrame, sx, sy, frameW, frameH, -boss.w / 2, -boss.h / 2, boss.w, boss.h);
+      } else {
+        ctx.drawImage(bossFrame, -boss.w / 2, -boss.h / 2, boss.w, boss.h);
+      }
+      
+      // 赤被弾フラッシュ（Canvas 2Dでの高品質重ね合わせ）
+      if (boss.hurtTimer > 0 && Math.floor(boss.hurtTimer * 24) % 2 === 0) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.fillRect(-boss.w / 2, -boss.h / 2, boss.w, boss.h);
+      }
+      if (boss.state === 'defeat') {
+        const fadeProgress = 1 - Math.max(0, boss.timer / 2.4);
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.95, 0.25 + fadeProgress * 0.8)})`;
+        ctx.fillRect(-boss.w / 2, -boss.h / 2, boss.w, boss.h);
+      }
+      ctx.restore();
+    }
+    
+    ctx.restore();
+    
+    // ボスライフゲージ
+    if (boss.state === 'fight') {
+      ctx.save();
+      // 暗い背景
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(W / 2 - 100, 30, 200, 14);
+      // 残りライフ
+      ctx.fillStyle = '#ff3b30';
+      const hpWidth = Math.max(0, (boss.hp / boss.maxHp) * 200);
+      ctx.fillRect(W / 2 - 100, 30, hpWidth, 14);
+      // 枠線
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(W / 2 - 100, 30, 200, 14);
+      
+      // テキスト
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('BOSS: CROW KING', W / 2, 22);
+      ctx.restore();
+    }
+  }
+  
+  ctx.restore();
+}
+
+function loop(ts) {
+  if (!running) {
+    rafId = 0;
+    return;
+  }
+  if (!lastTime) lastTime = ts;
+  let dt = (ts - lastTime) / 1000;
+  if (dt > 0.05) dt = 0.05;
+  lastTime = ts;
+  
+  update(dt);
+  if (!running) {
+    rafId = 0;
+    return;
+  }
+  draw();
+  flushDeferredEffects();
+  rafId = requestAnimationFrame(loop);
+}
+
+// ----------------- 入力処理 (INPUT) -----------------
+function handleDialogueInteraction() {
+  if (dialogueState.active) {
+    advanceDialogue();
+    return true;
+  }
+  return false;
+}
+
+function triggerJump() {
+  if (!running || player.state === 'hurt') return;
+  // 会話イベント中、またはボス登場・撃破演出中はジャンプ操作を受け付けない
+  if (gameStartEventActive) return;
+  if (boss.active && (boss.state === 'warning' || boss.state === 'intro' || boss.state === 'defeat' || boss.state === 'intro_dialogue' || boss.state === 'fight_dialogue')) return;
+  
+  if (player.state === 'run') {
+    player.state = 'jump';
+    player.jumpProgress = 0;
+    queueJumpEffects();
+    se.playJump();
+  }
+}
+
+function handlePrimaryInput(e) {
+  e.preventDefault();
+  if (handleDialogueInteraction()) return;
+  triggerJump();
+}
+
+if (window.PointerEvent) {
+  canvas.addEventListener('pointerdown', handlePrimaryInput);
+} else {
+  canvas.addEventListener('touchstart', handlePrimaryInput);
+  canvas.addEventListener('mousedown', handlePrimaryInput);
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (handleDialogueInteraction()) return;
+    triggerJump();
+  }
+});
+
+// ----------------- UI イベント -----------------
+startBtn.addEventListener('click', () => {
+  startGame();
+});
+
+retryBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  startGame();
+});
+
+// 初期レンダリング
+resetGame();
+resizeCanvas();
+draw();
+</script>
+</body>
+</html>

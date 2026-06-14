@@ -11,7 +11,18 @@
   box-shadow: 0 0 40px rgba(0,0,0,0.2); /* 美しく浮き立つリッチな影 */
   user-select: none;
   -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   touch-action: none;
+}
+
+/* 子要素も含めすべてのテキスト選択・長押しポップアップを完全抑止 */
+.local-room-container * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  -webkit-touch-callout: none !important;
 }
 
 /* 美しい木目調フローリング背景（ソロ部屋を彩る極上の質感） */
@@ -63,6 +74,8 @@
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3)); /* 影を深めにして立体感を強調 */
+  pointer-events: none; /* 画像ドラッグ・タップ判定の競合を防止 */
+  -webkit-user-drag: none; /* 長押しドラッグ保存を無効化 */
 }
 
 /* ネームタグ */

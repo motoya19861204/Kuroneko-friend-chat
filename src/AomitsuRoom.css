@@ -17,6 +17,18 @@
   box-shadow: 0 0 40px rgba(0,0,0,0.2), inset 0 -10px 20px rgba(0,0,0,0.05); /* 美しく浮き立つリッチな影 */
   cursor: pointer;
   user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* 子要素も含めすべてのテキスト選択・長押しポップアップを完全抑止 */
+.aomitsu-room-container * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  -webkit-touch-callout: none !important;
 }
 
 /* お部屋のインテリア（コタツ・ラグ風の円） */
@@ -131,6 +143,8 @@
   object-fit: contain; /* 丸型切り抜きや背景色を廃止し、ドット絵全身そのままを表示 */
   filter: drop-shadow(0 6px 8px rgba(0,0,0,0.25)); /* 床の上に浮き立つ綺麗な影を適用 */
   transition: transform 0.1s;
+  pointer-events: none; /* 画像ドラッグ・タップ判定の競合を防止 */
+  -webkit-user-drag: none; /* 長押しドラッグ保存を無効化 */
 }
 
 .avatar-node:active .avatar-node-img {
@@ -323,5 +337,95 @@
 @media (max-width: 480px) {
   .room-instruction-label {
     display: none; /* スマホではPC案内を非表示 */
+  }
+}
+
+/* LINEチャットに戻るボタン */
+.room-back-btn {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.room-back-btn:hover {
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+/* アーケードゲーム筐体 */
+.arcade-cabinet {
+  position: absolute;
+  left: 15%;
+  top: 25%;
+  width: 60px;
+  height: 85px;
+  background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+  border: 3px solid #bd34eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(189, 52, 235, 0.4);
+  z-index: 2;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.arcade-cabinet:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(189, 52, 235, 0.8);
+}
+
+.arcade-screen-text {
+  font-size: 7px;
+  font-weight: bold;
+  color: #00ffff;
+  text-shadow: 0 0 4px #00ffff;
+  background: #080712;
+  width: 85%;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid rgba(189, 52, 235, 0.5);
+  margin-bottom: 4px;
+  text-align: center;
+  line-height: 1.1;
+  font-family: 'Outfit', sans-serif;
+  animation: arcade-glow 2.0s infinite alternate;
+}
+
+.arcade-cabinet-sprite {
+  font-size: 1.8rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+@keyframes arcade-glow {
+  from {
+    text-shadow: 0 0 2px #00ffff, 0 0 4px #00ffff;
+    filter: brightness(0.9);
+  }
+  to {
+    text-shadow: 0 0 6px #00ffff, 0 0 10px #00ffff, 0 0 14px #00ffff;
+    filter: brightness(1.28);
   }
 }
