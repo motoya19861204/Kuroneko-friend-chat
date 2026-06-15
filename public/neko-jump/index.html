@@ -1835,22 +1835,20 @@ function triggerBossDefeat() {
   hideDialogue();
   setWhiteFade(true, 1200);
   
-  // ボスBGMフェードアウト
-  let fadeCount = 0;
-  const fadeInterval = setInterval(() => {
-    try {
-      if (bossBgm.volume > 0.05) {
-        bossBgm.volume -= 0.05;
-      } else {
-        bossBgm.pause();
-        bossBgm.volume = 1.0;
-        clearInterval(fadeInterval);
-      }
-    } catch(e) {
-      clearInterval(fadeInterval);
-    }
-  }, 50);
-
+  // ボスBGM・通常BGM・登場BGMを即座に完全停止する
+  try {
+    bossBgm.pause();
+    bossBgm.currentTime = 0;
+    bossBgm.volume = 1.0;
+  } catch(e) {}
+  try {
+    bgm.pause();
+    bgm.currentTime = 0;
+  } catch(e) {}
+  try {
+    bossIntroBgm.pause();
+    bossIntroBgm.currentTime = 0;
+  } catch(e) {}
 }
 
 function finishBossDefeatFade() {
